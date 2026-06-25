@@ -986,48 +986,26 @@ function ProfileScreen({ userName, streak, points, sessions, lang, setLang, setU
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[#E7D3A8]/40">
-            <div className="w-8 h-8 rounded-xl bg-[#F4E3B2] flex items-center justify-center flex-shrink-0">
-              <Moon size={14} className="text-[#D6B15E]" />
-            </div>
-            <span className="flex-1 text-sm text-[#4B4032] font-medium">Theme</span>
-            <div className="flex gap-1.5">
-              {["Light", "Dark"].map(t => (
-                <button key={t} onClick={() => setTheme(t)}
-                  className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all ${theme === t ? "bg-[#4B4032] text-white" : "bg-[#E7D3A8] text-[#7A736B]"}`}>
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[#E7D3A8]/40">
-            <div className="w-8 h-8 rounded-xl bg-[#F4E3B2] flex items-center justify-center flex-shrink-0">
-              <Volume2 size={14} className="text-[#D6B15E]" />
-            </div>
-            <span className="flex-1 text-sm text-[#4B4032] font-medium">Text Size</span>
-            <div className="flex gap-1.5">
-              {["Standard", "Large"].map(t => (
-                <button key={t} onClick={() => setTextSize(t)}
-                  className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all ${textSize === t ? "bg-[#4B4032] text-white" : "bg-[#E7D3A8] text-[#7A736B]"}`}>
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="flex items-center gap-3 px-4 py-3.5">
-            <div className="w-8 h-8 rounded-xl bg-[#F4E3B2] flex items-center justify-center flex-shrink-0">
-              <Lock size={14} className="text-[#D6B15E]" />
-            </div>
-            <span className="flex-1 text-sm text-[#4B4032] font-medium">Privacy</span>
-            <div className="flex gap-1.5">
-              {["Private", "Public"].map(t => (
-                <button key={t} onClick={() => setPrivacy(t)}
-                  className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all ${privacy === t ? "bg-[#4B4032] text-white" : "bg-[#E7D3A8] text-[#7A736B]"}`}>
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
+          {([
+            { icon: Moon, label: "Theme", options: ["Light", "Dark"] as const, value: theme, set: setTheme },
+            { icon: Volume2, label: "Text Size", options: ["Standard", "Large"] as const, value: textSize, set: setTextSize },
+            { icon: Lock, label: "Privacy", options: ["Private", "Public"] as const, value: privacy, set: setPrivacy },
+          ] as const).map((s, i, arr) => {
+            const Icon = s.icon;
+            const opts = s.options as readonly string[];
+            const next = opts[(opts.indexOf(s.value) + 1) % opts.length];
+            return (
+              <button key={s.label} onClick={() => (s.set as (v: string) => void)(next)}
+                className={`w-full flex items-center gap-3 px-4 py-3.5 active:bg-[#F4E3B2]/40 transition-colors ${i < arr.length - 1 ? "border-b border-[#E7D3A8]/40" : ""}`}>
+                <div className="w-8 h-8 rounded-xl bg-[#F4E3B2] flex items-center justify-center shrink-0">
+                  <Icon size={14} className="text-[#D6B15E]" />
+                </div>
+                <span className="flex-1 text-sm text-[#4B4032] font-medium text-left">{s.label}</span>
+                <span className="text-[11px] text-[#7A736B]">{s.value}</span>
+                <ChevronRight size={13} className="text-[#C5B9AE] shrink-0" />
+              </button>
+            );
+          })}
         </div>
       </div>
       <div className="mx-5 mt-4">

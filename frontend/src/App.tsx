@@ -432,7 +432,7 @@ function DashboardScreen({ userName, streak, points, history, onScan }:
   );
 }
 
-function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string) => void }) {
+function PracticeScreen({ onDone, lang, onBack }: { onDone: (scores: Scores, feedback: string) => void; lang: string; onBack: () => void }) {
   const [step, setStep] = useState(0);
   const [recitMode, setRecitMode] = useState("Paraphrase");
   const [listening, setListening] = useState(false);
@@ -445,6 +445,8 @@ function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string)
   const [scores, setScores] = useState<Scores>({ accuracy: 0, confidence: 0, clarity: 0 });
   const [feedback, setFeedback] = useState("");
   const [transcript, setTranscript] = useState("");
+  const [fillerWords, setFillerWords] = useState(0);
+  const [pauseTime, setPauseTime] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -569,12 +571,13 @@ function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string)
       const lockedText = selBlock !== null ? paragraphs[selBlock] : extractedText;
       const cRes = await fetch(`${API}/api/coach`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lockedText, transcript: tData.transcript, mode: recitMode.toLowerCase().replace(/ /g, "_"), lang: "FIL" }),
+        body: JSON.stringify({ lockedText, transcript: tData.transcript, mode: recitMode.toLowerCase().replace(/ /g, "_"), lang }),
       });
       const cData = await cRes.json();
       if (cData.error) throw new Error(cData.error);
       const s = { accuracy: cData.accuracy ?? 75, confidence: cData.confidence ?? 70, clarity: cData.clarity ?? 72 };
       setScores(s); setFeedback(cData.feedback || "Magaling! Keep practicing.");
+      setFillerWords(cData.fillerWords ?? 0); setPauseTime(cData.pauseTime ?? 0);
       setStep(3); onDone(s, cData.feedback || "");
     } catch (e: any) { setError(e.message || "Submission failed"); }
     finally { setSubmitting(false); }
@@ -583,7 +586,7 @@ function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string)
   if (step === 0) return (
     <div className="h-full flex flex-col bg-[#1A1209]">
       <div className="px-5 pt-3 flex items-center justify-between flex-shrink-0">
-        <button className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center">
+        <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center">
           <ArrowLeft size={18} className="text-white" />
         </button>
         <span className="text-white font-bold text-sm">Scan Module</span>
@@ -771,6 +774,16 @@ function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string)
             <SkillRing label={s.label} value={s.value} color={s.color} />
           </div>
         ))}
+      </div>
+      <div className="mx-5 mt-3 grid grid-cols-2 gap-2.5">
+        <div className="bg-white rounded-2xl p-3.5 border border-[#E7D3A8]/60 shadow-sm">
+          <p className="text-[9px] font-bold text-[#7A736B] uppercase tracking-wider mb-1">Filler Words</p>
+          <p className="text-xl font-black text-[#4B4032]">{fillerWords} <span className="text-xs font-semibold text-[#7A736B]">detected</span></p>
+        </div>
+        <div className="bg-white rounded-2xl p-3.5 border border-[#E7D3A8]/60 shadow-sm">
+          <p className="text-[9px] font-bold text-[#7A736B] uppercase tracking-wider mb-1">Avg Pause</p>
+          <p className="text-xl font-black text-[#4B4032]">{pauseTime}s <span className="text-xs font-semibold text-[#7A736B]">between words</span></p>
+        </div>
       </div>
       {transcript && (
         <div className="mx-5 mt-4 bg-white rounded-3xl p-4 border border-[#E7D3A8]/60">
@@ -985,13 +998,14 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("home");
   const [userName, setUserName] = useState("Learner");
   const [lang, setLang] = useState("FIL");
-  const [streak] = useState(1);
+  const [streak, setStreak] = useState(0);
   const [points, setPoints] = useState(0);
   const [history, setHistory] = useState<Session[]>([]);
 
   const handleDone = useCallback((scores: Scores, feedback: string) => {
     const earned = Math.round((scores.accuracy + scores.confidence + scores.clarity) / 3);
     setPoints(p => p + earned);
+    setStreak(s => s + 1);
     setHistory(h => [...h, { scores, feedback }]);
   }, []);
 
@@ -1013,7 +1027,7 @@ export default function App() {
             <>
               <div className="flex-1 overflow-hidden min-h-0">
                 {activeTab === "home" && <HomeScreen onPractice={() => setActiveTab("practice")} userName={userName} streak={streak} points={points} sessions={history.length} />}
-                {activeTab === "practice" && <PracticeScreen onDone={handleDone} />}
+                {activeTab === "practice" && <PracticeScreen onDone={handleDone} lang={lang} onBack={() => setActiveTab("home")} />}
                 {activeTab === "dashboard" && <DashboardScreen userName={userName} streak={streak} points={points} history={history} onScan={() => setActiveTab("practice")} />}
                 {activeTab === "progress" && <ProgressScreen history={history} />}
                 {activeTab === "profile" && <ProfileScreen userName={userName} streak={streak} points={points} sessions={history.length} lang={lang} setLang={setLang} setUserName={setUserName} />}

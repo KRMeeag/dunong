@@ -92,14 +92,21 @@ Evaluate and return JSON with these exact keys:
   }
 }
 
-export async function askQuestion(context: string, question: string): Promise<string> {
+export async function askQuestion(context: string, question: string, lang = 'FIL'): Promise<string> {
+  const systemPrompt = lang === 'FIL'
+    ? 'Ikaw si Dunong, isang matulunging AI tutor. Sagutin ang tanong base sa ibinigay na konteksto. Maging malinaw at maikli.'
+    : 'You are Dunong, a helpful AI tutor. Answer the question based on the given context. Be clear and concise.'
+  const userPrompt = lang === 'FIL'
+    ? `Konteksto: "${context}"\n\nTanong: ${question}`
+    : `Context: "${context}"\n\nQuestion: ${question}`
+  const fallback = lang === 'FIL' ? 'Hindi ko masagot iyon ngayon.' : 'I cannot answer that right now.'
   const response = await groq.chat.completions.create({
     model: 'llama-3.3-70b-versatile',
     messages: [
-      { role: 'system', content: 'Ikaw si Dunong, isang matulunging AI tutor. Sagutin ang tanong base sa ibinigay na konteksto. Maging malinaw at maikli.' },
-      { role: 'user', content: `Konteksto: "${context}"\n\nTanong: ${question}` }
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
     ],
     max_tokens: 256,
   })
-  return response.choices[0].message.content?.trim() ?? 'Hindi ko masagot iyon ngayon.'
+  return response.choices[0].message.content?.trim() ?? fallback
 }

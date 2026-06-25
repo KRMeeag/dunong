@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   Home, BookOpen, TrendingUp, User, Bell, Flame, Mic,
   Camera, ChevronRight, Check, ArrowLeft, Award,
@@ -61,31 +61,38 @@ function StatusBar() {
   );
 }
 
-function BottomNav({ active, onChange }: { active: string; onChange: (t: string) => void }) {
-  const tabs = [
+function BottomNav({ active, onChange, onScanPress }: { active: string; onChange: (t: string) => void; onScanPress: () => void }) {
+  const leftTabs = [
     { id: "home", icon: Home, label: "Home" },
-    { id: "practice", icon: BookOpen, label: "Practice" },
     { id: "progress", icon: TrendingUp, label: "Progress" },
+  ];
+  const rightTabs = [
+    { id: "sessions", icon: BookOpen, label: "Sessions" },
     { id: "profile", icon: User, label: "Profile" },
   ];
+  const renderTab = (tab: { id: string; icon: any; label: string }) => {
+    const Icon = tab.icon;
+    const on = active === tab.id;
+    return (
+      <button key={tab.id} onClick={() => onChange(tab.id)}
+        className="flex flex-col items-center gap-0.5 px-4 py-2">
+        <Icon size={20} className={on ? "text-[#4B4032]" : "text-[#A89D8A]"} />
+        <span className={`text-[9px] font-bold ${on ? "text-[#4B4032]" : "text-[#A89D8A]"}`}>{tab.label}</span>
+      </button>
+    );
+  };
   return (
-    <div className="bg-[#FFFDF8]/95 backdrop-blur-sm border-t border-[#E7D3A8]">
-      <div className="flex items-center justify-around px-4 pt-2.5 pb-6">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const on = active === tab.id;
-          return (
-            <button key={tab.id} onClick={() => onChange(tab.id)} className="flex flex-col items-center gap-1">
-              <div className={`p-2 rounded-2xl transition-all ${on ? "bg-[#D6B15E]" : ""}`}>
-                <Icon size={20} className={on ? "text-white" : "text-[#7A736B]"} />
-              </div>
-              <span className={`text-[10px] font-bold ${on ? "text-[#D6B15E]" : "text-[#7A736B]"}`}>
-                {tab.label}
-              </span>
-            </button>
-          );
-        })}
+    <div className="relative bg-[#FFF9EE] px-5" style={{ paddingTop: 28, paddingBottom: 24 }}>
+      <div className="flex items-center justify-between bg-white/90 border border-[#E7D3A8]/70 rounded-full px-1 shadow-md" style={{ height: 56 }}>
+        <div className="flex">{leftTabs.map(renderTab)}</div>
+        <div style={{ width: 56 }} />
+        <div className="flex">{rightTabs.map(renderTab)}</div>
       </div>
+      <button onClick={onScanPress}
+        className="absolute left-1/2 -translate-x-1/2 w-14 h-14 rounded-full bg-[#D6B15E] border-4 border-[#FFF9EE] flex items-center justify-center shadow-xl shadow-[#D6B15E]/40 active:scale-95 transition-transform z-10"
+        style={{ top: 0 }}>
+        <ScanLine size={22} className="text-white" />
+      </button>
     </div>
   );
 }
@@ -175,9 +182,78 @@ function LandingScreen({ onStart }: { onStart: () => void }) {
   );
 }
 
-function HomeScreen({ onPractice, userName, streak, points, sessions }:
-  { onPractice: () => void; userName: string; streak: number; points: number; sessions: number }) {
+function OnboardingScreen({ onDone, lang, setLang }: { onDone: () => void; lang: string; setLang: (l: string) => void }) {
+  const [step, setStep] = useState(0);
+  const total = 3;
+  return (
+    <div className="h-full flex flex-col bg-[#FFF9EE]">
+      <div className="flex items-center justify-between px-6 pt-6 pb-2">
+        <div className="flex gap-1.5">
+          {Array.from({ length: total }).map((_, i) => (
+            <div key={i} className={`h-2 rounded-full transition-all ${i <= step ? "bg-[#4B4032] w-6" : "bg-[#E7D3A8] w-2"}`} />
+          ))}
+        </div>
+        <button onClick={onDone} className="text-[#7A736B] text-xs font-semibold">Skip</button>
+      </div>
+      <div className="flex-1 flex items-center justify-center px-7">
+        {step === 0 && (
+          <div className="flex flex-col items-center text-center gap-5">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#FFFDF6] to-[#D6B15E] flex items-center justify-center shadow-xl shadow-[#D6B15E]/40">
+              <span className="text-4xl font-black text-[#4B4032]" style={{ fontFamily: "Fraunces, serif" }}>D</span>
+            </div>
+            <h1 className="text-3xl font-black text-[#4B4032]" style={{ fontFamily: "Fraunces, serif" }}>Welcome to Dunong!</h1>
+            <p className="text-[#7A736B] text-sm leading-relaxed">Your AI recitation coach for Filipino students. Practice before you recite.</p>
+          </div>
+        )}
+        {step === 1 && (
+          <div className="w-full">
+            <h2 className="text-2xl font-black text-[#4B4032] mb-2 text-center" style={{ fontFamily: "Fraunces, serif" }}>Choose language</h2>
+            <p className="text-[#7A736B] text-xs text-center mb-6">Used for AI coaching feedback</p>
+            <div className="flex flex-col gap-3">
+              {["FIL", "EN"].map(l => (
+                <button key={l} onClick={() => setLang(l)}
+                  className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${lang === l ? "border-[#4B4032] bg-[#4B4032]/5" : "border-[#E7D3A8] bg-white"}`}>
+                  <span className="font-bold text-[#4B4032]">{l === "FIL" ? "Filipino" : "English"}</span>
+                  {lang === l && <Check size={18} className="text-[#4B4032]" strokeWidth={3} />}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {step === 2 && (
+          <div className="flex flex-col items-center text-center gap-5">
+            <div className="w-20 h-20 rounded-full bg-[#A8CFA0] flex items-center justify-center">
+              <Check size={36} className="text-white" strokeWidth={2.5} />
+            </div>
+            <h1 className="text-3xl font-black text-[#4B4032]" style={{ fontFamily: "Fraunces, serif" }}>You're all set!</h1>
+            <p className="text-[#7A736B] text-sm leading-relaxed">Point your camera at a printed module to begin practicing.</p>
+          </div>
+        )}
+      </div>
+      <div className="px-6 pb-10 flex gap-3">
+        {step > 0 && (
+          <button onClick={() => setStep(s => s - 1)}
+            className="flex-1 h-14 rounded-full border-2 border-[#E7D3A8] bg-transparent text-[#4B4032] font-bold text-sm">
+            Back
+          </button>
+        )}
+        <button onClick={() => step < total - 1 ? setStep(s => s + 1) : onDone()}
+          className="flex-[2] h-14 rounded-full bg-[#4B4032] text-[#FFF9EE] font-bold text-sm shadow-xl shadow-[#4B4032]/30">
+          {step === total - 1 ? "Start Practicing" : "Continue"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function HomeScreen({ onPractice, onProfile, userName, streak, points, sessions, history }:
+  { onPractice: (mode?: string) => void; onProfile: () => void; userName: string; streak: number; points: number; sessions: number; history: Session[] }) {
   const initials = userName.slice(0, 2).toUpperCase();
+  const practiceModes = [
+    { label: "Paraphrase", desc: "Restate the text in your own words", Icon: MessageCircle },
+    { label: "Cold Call", desc: "Answer without seeing the text", Icon: Zap },
+    { label: "Stand & Deliver", desc: "Full recitation performance", Icon: Mic },
+  ];
   return (
     <div className="h-full overflow-y-auto pb-4 bg-[#FFF9EE]" style={{ scrollbarWidth: "none" }}>
       <div className="px-5 pt-3 flex items-center justify-between">
@@ -189,9 +265,9 @@ function HomeScreen({ onPractice, userName, streak, points, sessions }:
           <button className="relative w-10 h-10 rounded-2xl bg-white border border-[#E7D3A8] flex items-center justify-center shadow-sm">
             <Bell size={18} className="text-[#4B4032]" />
           </button>
-          <div className="w-10 h-10 rounded-2xl bg-[#D6B15E] flex items-center justify-center text-white font-black text-[11px] shadow-sm">
+          <button onClick={onProfile} className="w-10 h-10 rounded-2xl bg-[#D6B15E] flex items-center justify-center text-white font-black text-[11px] shadow-sm active:scale-95 transition-transform">
             {initials}
-          </div>
+          </button>
         </div>
       </div>
       <div className="mx-5 mt-4 bg-gradient-to-br from-[#D6B15E] to-[#BF9840] rounded-3xl p-5 shadow-lg shadow-[#D6B15E]/25 relative overflow-hidden">
@@ -210,7 +286,7 @@ function HomeScreen({ onPractice, userName, streak, points, sessions }:
               <p className="text-white/65 text-[10px] font-semibold uppercase tracking-wide">Total Points</p>
               <p className="text-white font-black text-xl" style={{ fontFamily: "Fraunces, serif" }}>{points} pts</p>
             </div>
-            <button onClick={onPractice}
+            <button onClick={() => onPractice()}
               className="bg-white/20 backdrop-blur-sm rounded-2xl px-4 py-2.5 text-white font-bold text-sm flex items-center gap-1.5 border border-white/25 active:scale-95 transition-transform">
               <Play size={12} fill="white" />
               Practice
@@ -234,50 +310,50 @@ function HomeScreen({ onPractice, userName, streak, points, sessions }:
         ))}
       </div>
       <div className="mx-5 mt-3.5">
-        <button onClick={onPractice}
-          className="w-full bg-[#4B4032] rounded-3xl p-4 flex items-center justify-between active:scale-95 transition-transform">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-[#D6B15E] flex items-center justify-center">
-              <Camera size={22} className="text-white" />
-            </div>
-            <div className="text-left">
-              <p className="text-white font-bold text-[15px]">Scan a Module</p>
-              <p className="text-white/55 text-xs">Point camera at printed material</p>
-            </div>
-          </div>
-          <ChevronRight size={20} className="text-white/50" />
-        </button>
-      </div>
-      <div className="mx-5 mt-4 bg-white rounded-3xl p-5 border border-[#E7D3A8]/60 shadow-sm">
-        <p className="text-[#4B4032] font-bold text-sm mb-4">Your Skill Profile</p>
-        <div className="flex justify-around">
-          <SkillRing label="Confidence" value={78} color="#D6B15E" />
-          <SkillRing label="Clarity" value={65} color="#A8CFA0" />
-          <SkillRing label="Accuracy" value={84} color="#4B4032" />
+        <p className="text-[#7A736B] text-[10px] font-bold uppercase tracking-wider mb-2">Practice Modes</p>
+        <div className="bg-white rounded-3xl overflow-hidden border border-[#E7D3A8]/60 shadow-sm">
+          {practiceModes.map((m, i, arr) => (
+            <button key={m.label} onClick={() => onPractice(m.label)}
+              className={`w-full flex items-center gap-3 px-4 py-3.5 active:bg-[#F4E3B2]/50 transition-colors text-left ${i < arr.length - 1 ? "border-b border-[#E7D3A8]/40" : ""}`}>
+              <div className="w-9 h-9 rounded-xl bg-[#F4E3B2] flex items-center justify-center shrink-0">
+                <m.Icon size={16} className="text-[#D6B15E]" />
+              </div>
+              <div className="flex-1">
+                <p className="text-[#4B4032] font-bold text-sm">{m.label}</p>
+                <p className="text-[#7A736B] text-xs">{m.desc}</p>
+              </div>
+              <ChevronRight size={14} className="text-[#C5B9AE] shrink-0" />
+            </button>
+          ))}
         </div>
       </div>
-      <div className="mx-5 mt-4 bg-white rounded-3xl p-5 border border-[#E7D3A8]/60 shadow-sm">
-        <p className="text-[#4B4032] font-bold text-sm mb-3">Points This Week</p>
-        <ResponsiveContainer width="100%" height={96}>
-          <BarChart data={weeklyPoints} barSize={22}>
-            <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#7A736B", fontWeight: 600 }} />
-            <Bar dataKey="pts" radius={[6, 6, 0, 0]}>
-              {weeklyPoints.map((_, i) => (
-                <Cell key={i} fill={i === 3 ? "#D6B15E" : "#E7D3A8"} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+      {history.length > 0 && (
+        <div className="mx-5 mt-3.5">
+          <p className="text-[#7A736B] text-[10px] font-bold uppercase tracking-wider mb-2">Recent</p>
+          <div className="flex flex-col gap-2">
+            {[...history].reverse().slice(0, 2).map((h, i) => (
+              <div key={i} className="bg-white rounded-2xl px-4 py-3 flex items-center gap-3 border border-[#E7D3A8]/60 shadow-sm">
+                <div className="w-9 h-9 rounded-xl bg-[#A8CFA0]/20 flex items-center justify-center shrink-0">
+                  <Check size={16} className="text-[#A8CFA0]" />
+                </div>
+                <p className="text-[#4B4032] text-xs font-medium flex-1 truncate">{h.feedback.slice(0, 50)}{h.feedback.length > 50 ? "…" : ""}</p>
+                <span className="text-sm font-black text-[#A8CFA0] shrink-0">{Math.round((h.scores.accuracy + h.scores.confidence + h.scores.clarity) / 3)}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 type Scores = { accuracy: number; confidence: number; clarity: number };
+type Session = { scores: Scores; feedback: string };
 
-function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string) => void }) {
+function PracticeScreen({ onDone, lang, onBack, defaultMode = "Paraphrase" }: { onDone: (scores: Scores, feedback: string) => void; lang: string; onBack: () => void; defaultMode?: string }) {
+  const [showChoice, setShowChoice] = useState(true);
   const [step, setStep] = useState(0);
-  const [recitMode, setRecitMode] = useState("Paraphrase");
+  const [recitMode, setRecitMode] = useState(defaultMode);
   const [listening, setListening] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [extractedText, setExtractedText] = useState("");
@@ -287,12 +363,26 @@ function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string)
   const [askAnswer, setAskAnswer] = useState("");
   const [scores, setScores] = useState<Scores>({ accuracy: 0, confidence: 0, clarity: 0 });
   const [feedback, setFeedback] = useState("");
+  const [transcript, setTranscript] = useState("");
+  const [fillerWords, setFillerWords] = useState(0);
+  const [pauseTime, setPauseTime] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (step === 3 && feedback) {
+      window.speechSynthesis.cancel();
+      const utt = new SpeechSynthesisUtterance(feedback);
+      utt.lang = "fil-PH"; utt.rate = 0.9;
+      window.speechSynthesis.speak(utt);
+    }
+    return () => { window.speechSynthesis.cancel(); };
+  }, [step, feedback]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const mediaRecRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const startCamera = useCallback(async () => {
     try {
@@ -306,6 +396,32 @@ function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string)
     streamRef.current?.getTracks().forEach(t => t.stop());
     streamRef.current = null;
   }, []);
+
+  const handleGalleryUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setScanning(true); setError("");
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve((reader.result as string).split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const res = await fetch(`${API}/api/scan`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: base64 }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      const text: string = data.text;
+      const paras = text.split(/\n\n+/).map((p: string) => p.trim()).filter((p: string) => p.length > 20);
+      setExtractedText(text);
+      setParagraphs(paras.length ? paras : [text]);
+      stopCamera(); setShowChoice(false); setStep(1);
+    } catch (e: any) { setError(e.message || "Upload failed"); }
+    finally { setScanning(false); if (fileInputRef.current) fileInputRef.current.value = ""; }
+  }, [stopCamera]);
 
   const captureAndScan = useCallback(async () => {
     if (!videoRef.current) return;
@@ -334,16 +450,17 @@ function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string)
   const askDunong = useCallback(async () => {
     if (selBlock === null) return;
     setAsking(true); setAskAnswer("");
+    const question = lang === "EN" ? "What does this mean?" : "Ano ang ibig sabihin nito?";
     try {
       const res = await fetch(`${API}/api/ask`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ context: paragraphs[selBlock], question: "Ano ang ibig sabihin nito?" }),
+        body: JSON.stringify({ context: paragraphs[selBlock], question, lang }),
       });
       const data = await res.json();
       setAskAnswer(data.answer || "");
-    } catch { setAskAnswer("Hindi makonekta sa Dunong."); }
+    } catch { setAskAnswer(lang === "EN" ? "Could not connect to Dunong." : "Hindi makonekta sa Dunong."); }
     setAsking(false);
-  }, [selBlock, paragraphs]);
+  }, [selBlock, paragraphs, lang]);
 
   const startRecording = useCallback(() => {
     chunksRef.current = [];
@@ -370,24 +487,63 @@ function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string)
       const tRes = await fetch(`${API}/api/transcribe`, { method: "POST", body: fd });
       const tData = await tRes.json();
       if (tData.error) throw new Error(tData.error);
+      setTranscript(tData.transcript);
       const lockedText = selBlock !== null ? paragraphs[selBlock] : extractedText;
       const cRes = await fetch(`${API}/api/coach`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lockedText, transcript: tData.transcript, mode: recitMode.toLowerCase().replace(/ /g, "_"), lang: "FIL" }),
+        body: JSON.stringify({ lockedText, transcript: tData.transcript, mode: recitMode.toLowerCase().replace(/ /g, "_"), lang }),
       });
       const cData = await cRes.json();
       if (cData.error) throw new Error(cData.error);
-      const s = { accuracy: cData.scores?.accuracy ?? 75, confidence: cData.scores?.confidence ?? 70, clarity: cData.scores?.clarity ?? 72 };
+      const s = { accuracy: cData.accuracy ?? 75, confidence: cData.confidence ?? 70, clarity: cData.clarity ?? 72 };
       setScores(s); setFeedback(cData.feedback || "Magaling! Keep practicing.");
+      setFillerWords(cData.fillerWords ?? 0); setPauseTime(cData.pauseTime ?? 0);
       setStep(3); onDone(s, cData.feedback || "");
     } catch (e: any) { setError(e.message || "Submission failed"); }
     finally { setSubmitting(false); }
   }, [selBlock, paragraphs, extractedText, recitMode, onDone]);
 
+  if (showChoice) return (
+    <div className="h-full flex flex-col bg-[#FFF9EE]">
+      <div className="px-5 pt-3 flex items-center gap-3 flex-shrink-0">
+        <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-[#E7D3A8] flex items-center justify-center">
+          <ArrowLeft size={18} className="text-[#4B4032]" />
+        </button>
+        <h3 className="text-[#4B4032] font-bold text-sm">Start Practice</h3>
+      </div>
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleGalleryUpload} />
+      <div className="flex-1 flex flex-col justify-center gap-4 px-6">
+        <p className="text-[#7A736B] text-xs text-center">How do you want to scan your module?</p>
+        <button onClick={() => { setShowChoice(false); setTimeout(() => startCamera(), 50); }}
+          className="w-full bg-[#4B4032] rounded-3xl p-5 flex items-center gap-4 active:scale-95 transition-transform">
+          <div className="w-14 h-14 rounded-2xl bg-[#D6B15E] flex items-center justify-center flex-shrink-0">
+            <Camera size={24} className="text-white" />
+          </div>
+          <div className="text-left flex-1">
+            <p className="text-white font-bold text-base">Camera</p>
+            <p className="text-white/55 text-xs">Point at your printed module</p>
+          </div>
+          <ChevronRight size={20} className="text-white/40" />
+        </button>
+        <button onClick={() => fileInputRef.current?.click()}
+          className="w-full bg-white rounded-3xl p-5 flex items-center gap-4 border border-[#E7D3A8] active:scale-95 transition-transform">
+          <div className="w-14 h-14 rounded-2xl bg-[#E7D3A8] flex items-center justify-center flex-shrink-0">
+            <Upload size={24} className="text-[#4B4032]" />
+          </div>
+          <div className="text-left flex-1">
+            <p className="text-[#4B4032] font-bold text-base">Gallery</p>
+            <p className="text-[#7A736B] text-xs">Upload a photo from your device</p>
+          </div>
+          <ChevronRight size={20} className="text-[#C5B9AE]" />
+        </button>
+      </div>
+    </div>
+  );
+
   if (step === 0) return (
     <div className="h-full flex flex-col bg-[#1A1209]">
       <div className="px-5 pt-3 flex items-center justify-between flex-shrink-0">
-        <button className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center">
+        <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center">
           <ArrowLeft size={18} className="text-white" />
         </button>
         <span className="text-white font-bold text-sm">Scan Module</span>
@@ -407,7 +563,12 @@ function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string)
         </div>
       </div>
       <div className="px-6 py-5 flex items-center justify-around flex-shrink-0">
-        <div className="w-14 h-14" />
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleGalleryUpload} />
+        <button onClick={() => fileInputRef.current?.click()} disabled={scanning}
+          className="w-14 h-14 rounded-2xl bg-[#2A2010] flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform disabled:opacity-40">
+          <Upload size={18} className="text-[#D6B15E]" />
+          <span className="text-[#D6B15E]/70 text-[9px] font-semibold">Gallery</span>
+        </button>
         <button onClick={startCamera} className="w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-xl active:scale-95 transition-transform">
           <div className="w-16 h-16 rounded-full border-4 border-[#E7D3A8] flex items-center justify-center">
             <Camera size={26} className="text-[#4B4032]" />
@@ -453,7 +614,7 @@ function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string)
             </div>
             <div className="text-left">
               <p className="text-[#4B4032] text-xs font-bold">Ask Dunong</p>
-              <p className="text-[#7A736B] text-xs mt-0.5">{asking ? "Thinking..." : "Ano ang ibig sabihin nito?"}</p>
+              <p className="text-[#7A736B] text-xs mt-0.5">{asking ? "Thinking..." : lang === "EN" ? "What does this mean?" : "Ano ang ibig sabihin nito?"}</p>
             </div>
           </button>
         )}
@@ -497,10 +658,20 @@ function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string)
           </div>
         </div>
         {selBlock !== null && (
-          <div className="mx-5 mt-3 bg-white rounded-3xl p-4 border border-[#E7D3A8]/60 shadow-sm flex-shrink-0">
-            <p className="text-[9px] font-bold text-[#7A736B] uppercase tracking-wider mb-1.5">Selected Text</p>
-            <p className="text-[#4B4032] text-xs leading-relaxed line-clamp-4">{paragraphs[selBlock]}</p>
-          </div>
+          ["Cold Call", "Stand & Deliver"].includes(recitMode) ? (
+            <div className="mx-5 mt-3 bg-[#F4E3B2] rounded-3xl p-4 border border-[#D6B15E]/40 shadow-sm flex-shrink-0 flex items-center gap-3">
+              <Lock size={16} className="text-[#D6B15E] flex-shrink-0" />
+              <div>
+                <p className="text-[9px] font-bold text-[#7A736B] uppercase tracking-wider">Text hidden</p>
+                <p className="text-[#4B4032] text-xs font-medium mt-0.5">{recitMode} — recall from memory</p>
+              </div>
+            </div>
+          ) : (
+            <div className="mx-5 mt-3 bg-white rounded-3xl p-4 border border-[#E7D3A8]/60 shadow-sm flex-shrink-0">
+              <p className="text-[9px] font-bold text-[#7A736B] uppercase tracking-wider mb-1.5">Selected Text</p>
+              <p className="text-[#4B4032] text-xs leading-relaxed line-clamp-4">{paragraphs[selBlock]}</p>
+            </div>
+          )
         )}
         <div className="flex-1 flex flex-col items-center justify-center gap-4">
           {error && <p className="text-red-500 text-xs px-5 text-center">{error}</p>}
@@ -526,6 +697,12 @@ function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string)
               {[4, 8, 14, 10, 18, 12, 6, 16, 9].map((h, i) => (
                 <div key={i} className="w-1.5 bg-[#D6B15E] rounded-full animate-pulse" style={{ height: `${h + 4}px`, animationDelay: `${i * 0.08}s` }} />
               ))}
+            </div>
+          )}
+          {submitting && transcript && (
+            <div className="mx-5 bg-white rounded-2xl p-3.5 border border-[#E7D3A8]/60 w-full">
+              <p className="text-[9px] font-bold text-[#7A736B] uppercase tracking-wider mb-1">Dunong heard</p>
+              <p className="text-[#4B4032] text-xs leading-relaxed italic">"{transcript}"</p>
             </div>
           )}
         </div>
@@ -555,12 +732,32 @@ function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string)
           </div>
         ))}
       </div>
+      <div className="mx-5 mt-3 grid grid-cols-2 gap-2.5">
+        <div className="bg-white rounded-2xl p-3.5 border border-[#E7D3A8]/60 shadow-sm">
+          <p className="text-[9px] font-bold text-[#7A736B] uppercase tracking-wider mb-1">Filler Words</p>
+          <p className="text-xl font-black text-[#4B4032]">{fillerWords} <span className="text-xs font-semibold text-[#7A736B]">detected</span></p>
+        </div>
+        <div className="bg-white rounded-2xl p-3.5 border border-[#E7D3A8]/60 shadow-sm">
+          <p className="text-[9px] font-bold text-[#7A736B] uppercase tracking-wider mb-1">Avg Pause</p>
+          <p className="text-xl font-black text-[#4B4032]">{pauseTime}s <span className="text-xs font-semibold text-[#7A736B]">between words</span></p>
+        </div>
+      </div>
+      {transcript && (
+        <div className="mx-5 mt-4 bg-white rounded-3xl p-4 border border-[#E7D3A8]/60">
+          <p className="text-[9px] font-bold text-[#7A736B] uppercase tracking-wider mb-1.5">Dunong heard</p>
+          <p className="text-[#4B4032] text-xs leading-relaxed italic">"{transcript}"</p>
+        </div>
+      )}
       <div className="mx-5 mt-4 bg-[#F4E3B2] rounded-3xl p-4 border border-[#E7D3A8]">
         <div className="flex items-center gap-2 mb-2.5">
           <div className="w-7 h-7 rounded-xl bg-[#D6B15E] flex items-center justify-center">
             <span className="text-white text-[10px] font-black">D</span>
           </div>
           <span className="text-[#4B4032] font-bold text-sm">Dunong says</span>
+          <button onClick={() => { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(feedback); u.lang = "fil-PH"; u.rate = 0.9; window.speechSynthesis.speak(u); }}
+            className="ml-auto w-7 h-7 rounded-full bg-[#D6B15E] flex items-center justify-center">
+            <Volume2 size={13} className="text-white" />
+          </button>
         </div>
         <p className="text-[#4B4032] text-sm leading-relaxed">{feedback || "Napakagaling mo! Keep going!"}</p>
       </div>
@@ -580,15 +777,37 @@ function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string)
   );
 }
 
-function ProgressScreen({ history }: { history: { scores: Scores }[] }) {
+function ProgressScreen({ history }: { history: Session[] }) {
   const avg = history.length
     ? Math.round(history.reduce((s, h) => s + (h.scores.accuracy + h.scores.confidence + h.scores.clarity) / 3, 0) / history.length)
     : 0;
+  const conf = history.length ? Math.round(history.reduce((s, h) => s + h.scores.confidence, 0) / history.length) : 0;
+  const acc = history.length ? Math.round(history.reduce((s, h) => s + h.scores.accuracy, 0) / history.length) : 0;
+  const clar = history.length ? Math.round(history.reduce((s, h) => s + h.scores.clarity, 0) / history.length) : 0;
   return (
     <div className="h-full overflow-y-auto pb-4 bg-[#FFF9EE]" style={{ scrollbarWidth: "none" }}>
       <div className="px-5 pt-3">
         <h2 className="text-[#4B4032] font-black text-xl" style={{ fontFamily: "Fraunces, serif" }}>Progress</h2>
         <p className="text-[#7A736B] text-xs">Your recitation journey</p>
+      </div>
+      <div className="mx-5 mt-4 bg-white rounded-3xl p-5 border border-[#E7D3A8]/60 shadow-sm">
+        <p className="text-[#4B4032] font-bold text-sm mb-4">Skill Profile</p>
+        <div className="flex justify-around">
+          <SkillRing label="Confidence" value={conf} color="#A8CFA0" />
+          <SkillRing label="Clarity" value={clar} color="#D6B15E" />
+          <SkillRing label="Accuracy" value={acc} color="#4B4032" />
+        </div>
+      </div>
+      <div className="mx-5 mt-4 bg-white rounded-3xl p-5 border border-[#E7D3A8]/60 shadow-sm">
+        <p className="text-[#4B4032] font-bold text-sm mb-3">Points This Week</p>
+        <ResponsiveContainer width="100%" height={88}>
+          <BarChart data={weeklyPoints} barSize={22}>
+            <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#7A736B", fontWeight: 600 }} />
+            <Bar dataKey="pts" radius={[6, 6, 0, 0]}>
+              {weeklyPoints.map((_, i) => <Cell key={i} fill={i === 3 ? "#D6B15E" : "#E7D3A8"} />)}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
       </div>
       <div className="mx-5 mt-4 bg-white rounded-3xl p-5 border border-[#E7D3A8]/60 shadow-sm">
         <p className="text-[#4B4032] font-bold text-sm mb-4">Overall</p>
@@ -637,12 +856,12 @@ function ProgressScreen({ history }: { history: { scores: Scores }[] }) {
         <p className="text-[#4B4032] font-bold text-sm mb-3">Achievements</p>
         <div className="flex flex-col gap-2.5">
           {[
-            { name: "First Session", desc: "Complete your first recitation", icon: "⭐", earned: history.length >= 1 },
-            { name: "Study Buddy", desc: "Complete 5 sessions", icon: "📚", earned: history.length >= 5 },
-            { name: "High Scorer", desc: "Score 80%+ overall", icon: "🎯", earned: avg >= 80 },
+            { name: "First Session", desc: "Complete your first recitation", Icon: Star, earned: history.length >= 1 },
+            { name: "Study Buddy", desc: "Complete 5 sessions", Icon: BookOpen, earned: history.length >= 5 },
+            { name: "High Scorer", desc: "Score 80%+ overall", Icon: Award, earned: avg >= 80 },
           ].map((a) => (
             <div key={a.name} className={`flex items-center gap-3.5 p-4 rounded-2xl border ${a.earned ? "bg-white border-[#E7D3A8]/60" : "bg-[#F5F5F0] border-[#E7D3A8]/25 opacity-55"}`}>
-              <div className="w-12 h-12 rounded-2xl bg-[#F4E3B2] flex items-center justify-center text-xl flex-shrink-0">{a.icon}</div>
+              <div className="w-12 h-12 rounded-2xl bg-[#F4E3B2] flex items-center justify-center shrink-0"><a.Icon size={22} className="text-[#D6B15E]" /></div>
               <div className="flex-1">
                 <p className="text-[#4B4032] font-bold text-sm">{a.name}</p>
                 <p className="text-[#7A736B] text-xs">{a.desc}</p>
@@ -658,10 +877,56 @@ function ProgressScreen({ history }: { history: { scores: Scores }[] }) {
   );
 }
 
+function SessionsScreen({ history }: { history: Session[] }) {
+  return (
+    <div className="h-full overflow-y-auto pb-4 bg-[#FFF9EE]" style={{ scrollbarWidth: "none" }}>
+      <div className="px-5 pt-3 mb-4">
+        <h2 className="text-[#4B4032] font-black text-xl" style={{ fontFamily: "Fraunces, serif" }}>Sessions</h2>
+        <p className="text-[#7A736B] text-xs">{history.length} recitation{history.length !== 1 ? "s" : ""} completed</p>
+      </div>
+      {history.length === 0 ? (
+        <div className="mx-5 flex flex-col items-center justify-center py-16 gap-3">
+          <div className="w-16 h-16 rounded-full bg-[#F4E3B2] flex items-center justify-center">
+            <Mic size={28} className="text-[#D6B15E]" />
+          </div>
+          <p className="text-[#4B4032] font-bold text-sm">No sessions yet</p>
+          <p className="text-[#7A736B] text-xs text-center">Tap the scan button below to start your first recitation.</p>
+        </div>
+      ) : (
+        <div className="mx-5 flex flex-col gap-3">
+          {[...history].reverse().map((h, i) => {
+            const score = Math.round((h.scores.accuracy + h.scores.confidence + h.scores.clarity) / 3);
+            return (
+              <div key={i} className="bg-white rounded-2xl p-4 border border-[#E7D3A8]/60 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-bold text-[#7A736B] uppercase tracking-wider">Session {history.length - i}</span>
+                  <span className={`text-sm font-black ${score >= 80 ? "text-[#A8CFA0]" : score >= 60 ? "text-[#D6B15E]" : "text-[#4B4032]"}`}>{score}%</span>
+                </div>
+                <div className="flex gap-3 mb-2.5">
+                  {[{ l: "Accuracy", v: h.scores.accuracy }, { l: "Confidence", v: h.scores.confidence }, { l: "Clarity", v: h.scores.clarity }].map(s => (
+                    <div key={s.l} className="flex-1 bg-[#FAFAF8] rounded-xl p-2 text-center border border-[#E7D3A8]/40">
+                      <p className="text-xs font-black text-[#4B4032]">{s.v}%</p>
+                      <p className="text-[8px] text-[#7A736B] font-semibold mt-0.5">{s.l}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[#7A736B] text-xs leading-relaxed line-clamp-2">{h.feedback}</p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ProfileScreen({ userName, streak, points, sessions, lang, setLang, setUserName }:
   { userName: string; streak: number; points: number; sessions: number; lang: string; setLang: (l: string) => void; setUserName: (n: string) => void }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(userName);
+  const [theme, setTheme] = useState("Light");
+  const [textSize, setTextSize] = useState("Standard");
+  const [privacy, setPrivacy] = useState("Private");
   const initials = userName.slice(0, 2).toUpperCase();
   return (
     <div className="h-full overflow-y-auto pb-4 bg-[#FFF9EE]" style={{ scrollbarWidth: "none" }}>
@@ -721,17 +986,24 @@ function ProfileScreen({ userName, streak, points, sessions, lang, setLang, setU
               ))}
             </div>
           </div>
-          {[{ icon: Moon, label: "Theme", value: "Light" }, { icon: Volume2, label: "Accessibility", value: "Standard" }, { icon: Lock, label: "Privacy", value: "Private" }].map((s, i, arr) => {
+          {([
+            { icon: Moon, label: "Theme", options: ["Light", "Dark"] as const, value: theme, set: setTheme },
+            { icon: Volume2, label: "Text Size", options: ["Standard", "Large"] as const, value: textSize, set: setTextSize },
+            { icon: Lock, label: "Privacy", options: ["Private", "Public"] as const, value: privacy, set: setPrivacy },
+          ] as const).map((s, i, arr) => {
             const Icon = s.icon;
+            const opts = s.options as readonly string[];
+            const next = opts[(opts.indexOf(s.value) + 1) % opts.length];
             return (
-              <div key={s.label} className={`flex items-center gap-3 px-4 py-3.5 ${i < arr.length-1 ? "border-b border-[#E7D3A8]/40" : ""}`}>
-                <div className="w-8 h-8 rounded-xl bg-[#F4E3B2] flex items-center justify-center flex-shrink-0">
+              <button key={s.label} onClick={() => (s.set as (v: string) => void)(next)}
+                className={`w-full flex items-center gap-3 px-4 py-3.5 active:bg-[#F4E3B2]/40 transition-colors ${i < arr.length - 1 ? "border-b border-[#E7D3A8]/40" : ""}`}>
+                <div className="w-8 h-8 rounded-xl bg-[#F4E3B2] flex items-center justify-center shrink-0">
                   <Icon size={14} className="text-[#D6B15E]" />
                 </div>
-                <span className="flex-1 text-sm text-[#4B4032] font-medium">{s.label}</span>
+                <span className="flex-1 text-sm text-[#4B4032] font-medium text-left">{s.label}</span>
                 <span className="text-[11px] text-[#7A736B]">{s.value}</span>
-                <ChevronRight size={13} className="text-[#C5B9AE] flex-shrink-0" />
-              </div>
+                <ChevronRight size={13} className="text-[#C5B9AE] shrink-0" />
+              </button>
             );
           })}
         </div>
@@ -752,21 +1024,29 @@ function ProfileScreen({ userName, streak, points, sessions, lang, setLang, setU
   );
 }
 
-type Session = { scores: Scores; feedback: string };
-
 export default function App() {
   const [showLanding, setShowLanding] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [activeTab, setActiveTab] = useState("home");
+  const [practiceKey, setPracticeKey] = useState(0);
   const [userName, setUserName] = useState("Learner");
   const [lang, setLang] = useState("FIL");
-  const [streak] = useState(1);
+  const [streak, setStreak] = useState(0);
   const [points, setPoints] = useState(0);
   const [history, setHistory] = useState<Session[]>([]);
+  const [practiceDefaultMode, setPracticeDefaultMode] = useState("Paraphrase");
 
   const handleDone = useCallback((scores: Scores, feedback: string) => {
     const earned = Math.round((scores.accuracy + scores.confidence + scores.clarity) / 3);
     setPoints(p => p + earned);
+    setStreak(s => s + 1);
     setHistory(h => [...h, { scores, feedback }]);
+  }, []);
+
+  const handleScanPress = useCallback((mode?: string) => {
+    if (mode) setPracticeDefaultMode(mode);
+    setActiveTab("practice");
+    setPracticeKey(k => k + 1);
   }, []);
 
   return (
@@ -780,16 +1060,19 @@ export default function App() {
         <div className="flex-shrink-0 pt-7 z-20"><StatusBar /></div>
         <div className="flex-1 overflow-hidden flex flex-col min-h-0">
           {showLanding ? (
-            <LandingScreen onStart={() => setShowLanding(false)} />
+            <LandingScreen onStart={() => { setShowLanding(false); setShowOnboarding(true); }} />
+          ) : showOnboarding ? (
+            <OnboardingScreen onDone={() => setShowOnboarding(false)} lang={lang} setLang={setLang} />
           ) : (
             <>
               <div className="flex-1 overflow-hidden min-h-0">
-                {activeTab === "home" && <HomeScreen onPractice={() => setActiveTab("practice")} userName={userName} streak={streak} points={points} sessions={history.length} />}
-                {activeTab === "practice" && <PracticeScreen onDone={handleDone} />}
+                {activeTab === "home" && <HomeScreen onPractice={handleScanPress} onProfile={() => setActiveTab("profile")} userName={userName} streak={streak} points={points} sessions={history.length} history={history} />}
+                {activeTab === "practice" && <PracticeScreen key={practiceKey} onDone={handleDone} lang={lang} onBack={() => setActiveTab("home")} defaultMode={practiceDefaultMode} />}
                 {activeTab === "progress" && <ProgressScreen history={history} />}
+                {activeTab === "sessions" && <SessionsScreen history={history} />}
                 {activeTab === "profile" && <ProfileScreen userName={userName} streak={streak} points={points} sessions={history.length} lang={lang} setLang={setLang} setUserName={setUserName} />}
               </div>
-              <BottomNav active={activeTab} onChange={setActiveTab} />
+              <BottomNav active={activeTab} onChange={setActiveTab} onScanPress={handleScanPress} />
             </>
           )}
         </div>

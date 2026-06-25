@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   Home, BookOpen, TrendingUp, User, Bell, Flame, Mic,
   Camera, ChevronRight, Check, ArrowLeft, Award,
@@ -444,8 +444,19 @@ function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string)
   const [askAnswer, setAskAnswer] = useState("");
   const [scores, setScores] = useState<Scores>({ accuracy: 0, confidence: 0, clarity: 0 });
   const [feedback, setFeedback] = useState("");
+  const [transcript, setTranscript] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (step === 3 && feedback) {
+      window.speechSynthesis.cancel();
+      const utt = new SpeechSynthesisUtterance(feedback);
+      utt.lang = "fil-PH"; utt.rate = 0.9;
+      window.speechSynthesis.speak(utt);
+    }
+    return () => { window.speechSynthesis.cancel(); };
+  }, [step, feedback]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const mediaRecRef = useRef<MediaRecorder | null>(null);
@@ -554,6 +565,7 @@ function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string)
       const tRes = await fetch(`${API}/api/transcribe`, { method: "POST", body: fd });
       const tData = await tRes.json();
       if (tData.error) throw new Error(tData.error);
+      setTranscript(tData.transcript);
       const lockedText = selBlock !== null ? paragraphs[selBlock] : extractedText;
       const cRes = await fetch(`${API}/api/coach`, {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -686,10 +698,20 @@ function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string)
           </div>
         </div>
         {selBlock !== null && (
-          <div className="mx-5 mt-3 bg-white rounded-3xl p-4 border border-[#E7D3A8]/60 shadow-sm flex-shrink-0">
-            <p className="text-[9px] font-bold text-[#7A736B] uppercase tracking-wider mb-1.5">Selected Text</p>
-            <p className="text-[#4B4032] text-xs leading-relaxed line-clamp-4">{paragraphs[selBlock]}</p>
-          </div>
+          ["Cold Call", "Stand & Deliver"].includes(recitMode) ? (
+            <div className="mx-5 mt-3 bg-[#F4E3B2] rounded-3xl p-4 border border-[#D6B15E]/40 shadow-sm flex-shrink-0 flex items-center gap-3">
+              <Lock size={16} className="text-[#D6B15E] flex-shrink-0" />
+              <div>
+                <p className="text-[9px] font-bold text-[#7A736B] uppercase tracking-wider">Text hidden</p>
+                <p className="text-[#4B4032] text-xs font-medium mt-0.5">{recitMode} — recall from memory</p>
+              </div>
+            </div>
+          ) : (
+            <div className="mx-5 mt-3 bg-white rounded-3xl p-4 border border-[#E7D3A8]/60 shadow-sm flex-shrink-0">
+              <p className="text-[9px] font-bold text-[#7A736B] uppercase tracking-wider mb-1.5">Selected Text</p>
+              <p className="text-[#4B4032] text-xs leading-relaxed line-clamp-4">{paragraphs[selBlock]}</p>
+            </div>
+          )
         )}
         <div className="flex-1 flex flex-col items-center justify-center gap-4">
           {error && <p className="text-red-500 text-xs px-5 text-center">{error}</p>}
@@ -715,6 +737,12 @@ function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string)
               {[4, 8, 14, 10, 18, 12, 6, 16, 9].map((h, i) => (
                 <div key={i} className="w-1.5 bg-[#D6B15E] rounded-full animate-pulse" style={{ height: `${h + 4}px`, animationDelay: `${i * 0.08}s` }} />
               ))}
+            </div>
+          )}
+          {submitting && transcript && (
+            <div className="mx-5 bg-white rounded-2xl p-3.5 border border-[#E7D3A8]/60 w-full">
+              <p className="text-[9px] font-bold text-[#7A736B] uppercase tracking-wider mb-1">Dunong heard</p>
+              <p className="text-[#4B4032] text-xs leading-relaxed italic">"{transcript}"</p>
             </div>
           )}
         </div>
@@ -744,12 +772,22 @@ function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string)
           </div>
         ))}
       </div>
+      {transcript && (
+        <div className="mx-5 mt-4 bg-white rounded-3xl p-4 border border-[#E7D3A8]/60">
+          <p className="text-[9px] font-bold text-[#7A736B] uppercase tracking-wider mb-1.5">Dunong heard</p>
+          <p className="text-[#4B4032] text-xs leading-relaxed italic">"{transcript}"</p>
+        </div>
+      )}
       <div className="mx-5 mt-4 bg-[#F4E3B2] rounded-3xl p-4 border border-[#E7D3A8]">
         <div className="flex items-center gap-2 mb-2.5">
           <div className="w-7 h-7 rounded-xl bg-[#D6B15E] flex items-center justify-center">
             <span className="text-white text-[10px] font-black">D</span>
           </div>
           <span className="text-[#4B4032] font-bold text-sm">Dunong says</span>
+          <button onClick={() => { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(feedback); u.lang = "fil-PH"; u.rate = 0.9; window.speechSynthesis.speak(u); }}
+            className="ml-auto w-7 h-7 rounded-full bg-[#D6B15E] flex items-center justify-center">
+            <Volume2 size={13} className="text-white" />
+          </button>
         </div>
         <p className="text-[#4B4032] text-sm leading-relaxed">{feedback || "Napakagaling mo! Keep going!"}</p>
       </div>

@@ -4,7 +4,7 @@ import {
   Camera, ChevronRight, Check, ArrowLeft, Award,
   Zap, Upload, Settings, Download, Globe, Moon,
   ScanLine, MessageCircle, RotateCcw, Star, Lock,
-  Volume2, Play, Target,
+  Volume2, Play, Target, LayoutGrid,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -64,7 +64,8 @@ function StatusBar() {
 function BottomNav({ active, onChange }: { active: string; onChange: (t: string) => void }) {
   const tabs = [
     { id: "home", icon: Home, label: "Home" },
-    { id: "practice", icon: BookOpen, label: "Practice" },
+    { id: "practice", icon: Mic, label: "Practice" },
+    { id: "dashboard", icon: LayoutGrid, label: "Dashboard" },
     { id: "progress", icon: TrendingUp, label: "Progress" },
     { id: "profile", icon: User, label: "Profile" },
   ];
@@ -175,6 +176,70 @@ function LandingScreen({ onStart }: { onStart: () => void }) {
   );
 }
 
+function OnboardingScreen({ onDone, lang, setLang }: { onDone: () => void; lang: string; setLang: (l: string) => void }) {
+  const [step, setStep] = useState(0);
+  const total = 3;
+  return (
+    <div className="h-full flex flex-col bg-[#FFF9EE]">
+      <div className="flex items-center justify-between px-6 pt-6 pb-2">
+        <div className="flex gap-1.5">
+          {Array.from({ length: total }).map((_, i) => (
+            <div key={i} className={`h-2 rounded-full transition-all ${i <= step ? "bg-[#4B4032] w-6" : "bg-[#E7D3A8] w-2"}`} />
+          ))}
+        </div>
+        <button onClick={onDone} className="text-[#7A736B] text-xs font-semibold">Skip</button>
+      </div>
+      <div className="flex-1 flex items-center justify-center px-7">
+        {step === 0 && (
+          <div className="flex flex-col items-center text-center gap-5">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#FFFDF6] to-[#D6B15E] flex items-center justify-center shadow-xl shadow-[#D6B15E]/40">
+              <span className="text-4xl font-black text-[#4B4032]" style={{ fontFamily: "Fraunces, serif" }}>D</span>
+            </div>
+            <h1 className="text-3xl font-black text-[#4B4032]" style={{ fontFamily: "Fraunces, serif" }}>Welcome to Dunong!</h1>
+            <p className="text-[#7A736B] text-sm leading-relaxed">Your AI recitation coach for Filipino students. Practice before you recite.</p>
+          </div>
+        )}
+        {step === 1 && (
+          <div className="w-full">
+            <h2 className="text-2xl font-black text-[#4B4032] mb-2 text-center" style={{ fontFamily: "Fraunces, serif" }}>Choose language</h2>
+            <p className="text-[#7A736B] text-xs text-center mb-6">Used for AI coaching feedback</p>
+            <div className="flex flex-col gap-3">
+              {["FIL", "EN"].map(l => (
+                <button key={l} onClick={() => setLang(l)}
+                  className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${lang === l ? "border-[#4B4032] bg-[#4B4032]/5" : "border-[#E7D3A8] bg-white"}`}>
+                  <span className="font-bold text-[#4B4032]">{l === "FIL" ? "Filipino" : "English"}</span>
+                  {lang === l && <Check size={18} className="text-[#4B4032]" strokeWidth={3} />}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {step === 2 && (
+          <div className="flex flex-col items-center text-center gap-5">
+            <div className="w-20 h-20 rounded-full bg-[#A8CFA0] flex items-center justify-center">
+              <Check size={36} className="text-white" strokeWidth={2.5} />
+            </div>
+            <h1 className="text-3xl font-black text-[#4B4032]" style={{ fontFamily: "Fraunces, serif" }}>You're all set!</h1>
+            <p className="text-[#7A736B] text-sm leading-relaxed">Point your camera at a printed module to begin practicing.</p>
+          </div>
+        )}
+      </div>
+      <div className="px-6 pb-10 flex gap-3">
+        {step > 0 && (
+          <button onClick={() => setStep(s => s - 1)}
+            className="flex-1 h-14 rounded-full border-2 border-[#E7D3A8] bg-transparent text-[#4B4032] font-bold text-sm">
+            Back
+          </button>
+        )}
+        <button onClick={() => step < total - 1 ? setStep(s => s + 1) : onDone()}
+          className="flex-[2] h-14 rounded-full bg-[#4B4032] text-[#FFF9EE] font-bold text-sm shadow-xl shadow-[#4B4032]/30">
+          {step === total - 1 ? "Start Practicing" : "Continue"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function HomeScreen({ onPractice, userName, streak, points, sessions }:
   { onPractice: () => void; userName: string; streak: number; points: number; sessions: number }) {
   const initials = userName.slice(0, 2).toUpperCase();
@@ -274,6 +339,98 @@ function HomeScreen({ onPractice, userName, streak, points, sessions }:
 }
 
 type Scores = { accuracy: number; confidence: number; clarity: number };
+type Session = { scores: Scores; feedback: string };
+
+function DashboardScreen({ userName, streak, points, history, onScan }:
+  { userName: string; streak: number; points: number; history: Session[]; onScan: () => void }) {
+  const initials = userName.slice(0, 2).toUpperCase();
+  const avg = history.length
+    ? Math.round(history.reduce((s, h) => s + (h.scores.accuracy + h.scores.confidence + h.scores.clarity) / 3, 0) / history.length)
+    : 0;
+  const conf = history.length ? Math.round(history.reduce((s, h) => s + h.scores.confidence, 0) / history.length) : 74;
+  const acc = history.length ? Math.round(history.reduce((s, h) => s + h.scores.accuracy, 0) / history.length) : 65;
+  const clar = history.length ? Math.round(history.reduce((s, h) => s + h.scores.clarity, 0) / history.length) : 78;
+  const weekDots = ["M", "T", "W", "T", "F", "S", "S"];
+  return (
+    <div className="h-full overflow-y-auto pb-4 bg-[#FFF9EE]" style={{ scrollbarWidth: "none" }}>
+      <div className="px-5 pt-3 flex items-center justify-between">
+        <div>
+          <p className="text-xs text-[#7A736B] font-medium">Dashboard</p>
+          <h2 className="text-xl font-black text-[#4B4032]" style={{ fontFamily: "Fraunces, serif" }}>{userName}</h2>
+        </div>
+        <div className="w-10 h-10 rounded-2xl bg-[#D6B15E] flex items-center justify-center text-white font-black text-[11px] shadow-sm">{initials}</div>
+      </div>
+      <div className="mx-5 mt-4 bg-gradient-to-br from-[#4B4032] to-[#6B5A48] rounded-3xl p-5 shadow-lg relative overflow-hidden">
+        <div className="absolute -top-8 -right-8 w-32 h-32 bg-[#D6B15E]/10 rounded-full" />
+        <div className="flex items-start justify-between relative z-10">
+          <div>
+            <div className="flex items-center gap-1.5 mb-1">
+              <Flame size={16} className="text-[#D6B15E]" />
+              <span className="text-white/70 text-xs font-semibold">Current Streak</span>
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-4xl font-black text-white" style={{ fontFamily: "Fraunces, serif" }}>{streak}</span>
+              <span className="text-white/60 text-sm font-semibold">days</span>
+            </div>
+          </div>
+          <div className="flex gap-1.5">
+            {weekDots.map((d, i) => (
+              <div key={i} className="flex flex-col items-center gap-1">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center ${i < streak ? "bg-[#D6B15E]" : "bg-white/15"}`}>
+                  {i < streak && <Check size={10} className="text-[#4B4032]" strokeWidth={3} />}
+                </div>
+                <span className="text-[9px] text-white/50">{d}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <button onClick={onScan} className="mt-4 bg-[#D6B15E] text-[#4B4032] font-bold text-xs px-4 py-2.5 rounded-full active:scale-95 transition-transform">
+          Continue Session →
+        </button>
+      </div>
+      <div className="mx-5 mt-3.5 grid grid-cols-3 gap-2.5">
+        {[{ l: "Points", v: String(points), c: "#D6B15E" }, { l: "Sessions", v: String(history.length), c: "#9BBBD4" }, { l: "Avg Score", v: `${avg}%`, c: "#A8CFA0" }].map((s) => (
+          <div key={s.l} className="bg-white rounded-2xl p-3.5 text-center border border-[#E7D3A8]/60 shadow-sm">
+            <p className="font-black text-lg" style={{ color: s.c }}>{s.v}</p>
+            <p className="text-[9px] text-[#7A736B] font-semibold mt-0.5">{s.l}</p>
+          </div>
+        ))}
+      </div>
+      <div className="mx-5 mt-4 bg-white rounded-3xl p-5 border border-[#E7D3A8]/60 shadow-sm">
+        <p className="text-[#4B4032] font-bold text-sm mb-4">Skill Profile</p>
+        <div className="flex justify-around">
+          <SkillRing label="Confidence" value={conf} color="#A8CFA0" />
+          <SkillRing label="Clarity" value={clar} color="#D6B15E" />
+          <SkillRing label="Accuracy" value={acc} color="#4B4032" />
+        </div>
+      </div>
+      <div className="mx-5 mt-4 bg-white rounded-3xl p-5 border border-[#E7D3A8]/60 shadow-sm">
+        <p className="text-[#4B4032] font-bold text-sm mb-3">Points This Week</p>
+        <ResponsiveContainer width="100%" height={80}>
+          <BarChart data={weeklyPoints} barSize={22}>
+            <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#7A736B", fontWeight: 600 }} />
+            <Bar dataKey="pts" radius={[5, 5, 0, 0]}>
+              {weeklyPoints.map((_, i) => <Cell key={i} fill={i === 3 ? "#D6B15E" : "#E7D3A8"} />)}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      {history.length > 0 && (
+        <div className="mx-5 mt-4 bg-white rounded-3xl p-5 border border-[#E7D3A8]/60 shadow-sm">
+          <p className="text-[#4B4032] font-bold text-sm mb-3">Recent Sessions</p>
+          <div className="flex flex-col gap-0">
+            {history.slice(0, 3).map((h, i) => (
+              <div key={i} className="flex items-center justify-between py-2.5 border-b border-[#E7D3A8]/40 last:border-0">
+                <p className="text-xs text-[#4B4032] font-medium truncate flex-1 mr-3">{h.feedback.slice(0, 50)}…</p>
+                <span className="text-xs font-black text-[#A8CFA0] flex-shrink-0">{Math.round((h.scores.accuracy + h.scores.confidence + h.scores.clarity) / 3)}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string) => void }) {
   const [step, setStep] = useState(0);
@@ -293,6 +450,7 @@ function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string)
   const streamRef = useRef<MediaStream | null>(null);
   const mediaRecRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const startCamera = useCallback(async () => {
     try {
@@ -306,6 +464,32 @@ function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string)
     streamRef.current?.getTracks().forEach(t => t.stop());
     streamRef.current = null;
   }, []);
+
+  const handleGalleryUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setScanning(true); setError("");
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve((reader.result as string).split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const res = await fetch(`${API}/api/scan`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: base64 }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      const text: string = data.text;
+      const paras = text.split(/\n\n+/).map((p: string) => p.trim()).filter((p: string) => p.length > 20);
+      setExtractedText(text);
+      setParagraphs(paras.length ? paras : [text]);
+      stopCamera(); setStep(1);
+    } catch (e: any) { setError(e.message || "Upload failed"); }
+    finally { setScanning(false); if (fileInputRef.current) fileInputRef.current.value = ""; }
+  }, [stopCamera]);
 
   const captureAndScan = useCallback(async () => {
     if (!videoRef.current) return;
@@ -377,7 +561,7 @@ function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string)
       });
       const cData = await cRes.json();
       if (cData.error) throw new Error(cData.error);
-      const s = { accuracy: cData.scores?.accuracy ?? 75, confidence: cData.scores?.confidence ?? 70, clarity: cData.scores?.clarity ?? 72 };
+      const s = { accuracy: cData.accuracy ?? 75, confidence: cData.confidence ?? 70, clarity: cData.clarity ?? 72 };
       setScores(s); setFeedback(cData.feedback || "Magaling! Keep practicing.");
       setStep(3); onDone(s, cData.feedback || "");
     } catch (e: any) { setError(e.message || "Submission failed"); }
@@ -407,7 +591,12 @@ function PracticeScreen({ onDone }: { onDone: (scores: Scores, feedback: string)
         </div>
       </div>
       <div className="px-6 py-5 flex items-center justify-around flex-shrink-0">
-        <div className="w-14 h-14" />
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleGalleryUpload} />
+        <button onClick={() => fileInputRef.current?.click()} disabled={scanning}
+          className="w-14 h-14 rounded-2xl bg-[#2A2010] flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform disabled:opacity-40">
+          <Upload size={18} className="text-[#D6B15E]" />
+          <span className="text-[#D6B15E]/70 text-[9px] font-semibold">Gallery</span>
+        </button>
         <button onClick={startCamera} className="w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-xl active:scale-95 transition-transform">
           <div className="w-16 h-16 rounded-full border-4 border-[#E7D3A8] flex items-center justify-center">
             <Camera size={26} className="text-[#4B4032]" />
@@ -752,10 +941,9 @@ function ProfileScreen({ userName, streak, points, sessions, lang, setLang, setU
   );
 }
 
-type Session = { scores: Scores; feedback: string };
-
 export default function App() {
   const [showLanding, setShowLanding] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [activeTab, setActiveTab] = useState("home");
   const [userName, setUserName] = useState("Learner");
   const [lang, setLang] = useState("FIL");
@@ -780,12 +968,15 @@ export default function App() {
         <div className="flex-shrink-0 pt-7 z-20"><StatusBar /></div>
         <div className="flex-1 overflow-hidden flex flex-col min-h-0">
           {showLanding ? (
-            <LandingScreen onStart={() => setShowLanding(false)} />
+            <LandingScreen onStart={() => { setShowLanding(false); setShowOnboarding(true); }} />
+          ) : showOnboarding ? (
+            <OnboardingScreen onDone={() => setShowOnboarding(false)} lang={lang} setLang={setLang} />
           ) : (
             <>
               <div className="flex-1 overflow-hidden min-h-0">
                 {activeTab === "home" && <HomeScreen onPractice={() => setActiveTab("practice")} userName={userName} streak={streak} points={points} sessions={history.length} />}
                 {activeTab === "practice" && <PracticeScreen onDone={handleDone} />}
+                {activeTab === "dashboard" && <DashboardScreen userName={userName} streak={streak} points={points} history={history} onScan={() => setActiveTab("practice")} />}
                 {activeTab === "progress" && <ProgressScreen history={history} />}
                 {activeTab === "profile" && <ProfileScreen userName={userName} streak={streak} points={points} sessions={history.length} lang={lang} setLang={setLang} setUserName={setUserName} />}
               </div>

@@ -1,0 +1,11 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #1a1612; min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'Hanken Grotesk', sans-serif; }
+#root { width: 390px; height: 100dvh; max-height: 844px; position: relative; overflow: hidden; background: #FFF9EE; border-radius: 42px; box-shadow: 0 34px 70px -24px rgba(75,64,50,.5); }
+@media (max-width: 430px) { #root { width: 100vw; height: 100dvh; max-height: none; border-radius: 0; } body { background: #FFF9EE; } }
+button { cursor: pointer; font-family: 'Hanken Grotesk', sans-serif; }
+input, textarea { font-family: 'Hanken Grotesk', sans-serif; }
+@keyframes dnPulse { 0%{transform:scale(1);opacity:.55} 70%{transform:scale(1.9);opacity:0} 100%{opacity:0} }
+@keyframes dnBob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+@keyframes dnSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+@keyframes pulseRing { 0%{transform:scale(1);opacity:.6} 100%{transform:scale(2.2);opacity:0} }

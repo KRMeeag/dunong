@@ -53,7 +53,15 @@ app.post('/api/coach', async (req, res) => {
     const { lockedText, transcript, mode, lang } = req.body as { lockedText:string; transcript:string; mode:string; lang:string }
     if (!lockedText || !transcript) { res.status(400).json({ error: 'Missing fields' }); return }
     if (MOCK) {
-      res.json({ type: 'encouragement', message: 'Napakagaling! Patuloy mo itong gawin.', accuracy: 82, confidence: 76, clarity: 79, fillerWords: 2, pauseTime: 1.1, feedback: 'Magaling ang iyong pagsisipag! Subukan mong palawakin pa ang iyong sagot sa susunod na pagkakataon.' })
+      const isFil = (lang || 'FIL') === 'FIL'
+      res.json({
+        type: 'encouragement',
+        message: isFil ? 'Napakagaling! Patuloy mo itong gawin.' : 'Great effort! Keep it up.',
+        accuracy: 82, confidence: 76, clarity: 79, fillerWords: 2, pauseTime: 1.1,
+        feedback: isFil
+          ? 'Magaling ang iyong pagsisipag! Subukan mong palawakin pa ang iyong sagot sa susunod na pagkakataon.'
+          : 'Great effort! Try to expand your answer next time and cover more key concepts from the text.',
+      })
       return
     }
     const result = await getCoachResponse({ lockedText, transcript, mode: mode||'paraphrase', lang: lang||'FIL' })
@@ -66,13 +74,17 @@ app.post('/api/coach', async (req, res) => {
 
 app.post('/api/ask', async (req, res) => {
   try {
-    const { context, question } = req.body as { context:string; question:string }
+    const { context, question, lang } = req.body as { context:string; question:string; lang?:string }
     if (!context || !question) { res.status(400).json({ error: 'Missing fields' }); return }
     if (MOCK) {
-      res.json({ answer: 'Ang tekstong ito ay nagsasalita tungkol sa kahalagahan ng pag-aaral at kung paano ito nakakatulong sa ating pang-araw-araw na buhay.' })
+      const isFil = (lang || 'FIL') === 'FIL'
+      res.json({ answer: isFil
+        ? 'Ang tekstong ito ay nagsasalita tungkol sa kahalagahan ng pag-aaral at kung paano ito nakakatulong sa ating pang-araw-araw na buhay.'
+        : 'This text talks about the importance of learning and how it helps us in our everyday lives.'
+      })
       return
     }
-    const answer = await askQuestion(context, question)
+    const answer = await askQuestion(context, question, lang)
     res.json({ answer })
   } catch (e: any) {
     console.error('/api/ask error:', e.message)

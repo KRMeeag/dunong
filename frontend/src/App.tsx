@@ -531,16 +531,17 @@ function PracticeScreen({ onDone, lang, onBack }: { onDone: (scores: Scores, fee
   const askDunong = useCallback(async () => {
     if (selBlock === null) return;
     setAsking(true); setAskAnswer("");
+    const question = lang === "EN" ? "What does this mean?" : "Ano ang ibig sabihin nito?";
     try {
       const res = await fetch(`${API}/api/ask`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ context: paragraphs[selBlock], question: "Ano ang ibig sabihin nito?" }),
+        body: JSON.stringify({ context: paragraphs[selBlock], question, lang }),
       });
       const data = await res.json();
       setAskAnswer(data.answer || "");
-    } catch { setAskAnswer("Hindi makonekta sa Dunong."); }
+    } catch { setAskAnswer(lang === "EN" ? "Could not connect to Dunong." : "Hindi makonekta sa Dunong."); }
     setAsking(false);
-  }, [selBlock, paragraphs]);
+  }, [selBlock, paragraphs, lang]);
 
   const startRecording = useCallback(() => {
     chunksRef.current = [];
@@ -657,7 +658,7 @@ function PracticeScreen({ onDone, lang, onBack }: { onDone: (scores: Scores, fee
             </div>
             <div className="text-left">
               <p className="text-[#4B4032] text-xs font-bold">Ask Dunong</p>
-              <p className="text-[#7A736B] text-xs mt-0.5">{asking ? "Thinking..." : "Ano ang ibig sabihin nito?"}</p>
+              <p className="text-[#7A736B] text-xs mt-0.5">{asking ? "Thinking..." : lang === "EN" ? "What does this mean?" : "Ano ang ibig sabihin nito?"}</p>
             </div>
           </button>
         )}

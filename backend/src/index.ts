@@ -2,7 +2,7 @@ import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import multer from 'multer'
-import { scanImageWithVLM, transcribeWithWhisper, getCoachResponse, askQuestion } from './services/groq.ts'
+import { scanImageWithVLM, transcribeWithWhisper, getCoachResponse, askQuestion } from './services/groq.js'
 
 const app = express()
 const upload = multer({ storage: multer.memoryStorage() })

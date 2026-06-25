@@ -1,4 +1,4 @@
-const BASE = '/api'
+export const BASE = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api'
 
 export async function scanImage(base64: string): Promise<string> {
   const res = await fetch(`${BASE}/scan`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: base64 }) })
@@ -32,4 +32,14 @@ export async function getCoachFeedback(params: { lockedText: string; transcript:
   const data = await res.json()
   if (!res.ok) throw new Error(data.error || 'Coach failed')
   return data
+}
+
+export async function checkHealth(): Promise<boolean> {
+  try {
+    const res = await fetch(`${BASE}/health`)
+    const data = await res.json()
+    return data.ok === true
+  } catch (e) {
+    return false
+  }
 }

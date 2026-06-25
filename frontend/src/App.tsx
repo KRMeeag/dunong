@@ -246,9 +246,14 @@ function OnboardingScreen({ onDone, lang, setLang }: { onDone: () => void; lang:
   );
 }
 
-function HomeScreen({ onPractice, userName, streak, points, sessions }:
-  { onPractice: () => void; userName: string; streak: number; points: number; sessions: number }) {
+function HomeScreen({ onPractice, onProfile, userName, streak, points, sessions, history }:
+  { onPractice: (mode?: string) => void; onProfile: () => void; userName: string; streak: number; points: number; sessions: number; history: Session[] }) {
   const initials = userName.slice(0, 2).toUpperCase();
+  const practiceModes = [
+    { label: "Paraphrase", desc: "Restate the text in your own words", Icon: MessageCircle },
+    { label: "Cold Call", desc: "Answer without seeing the text", Icon: Zap },
+    { label: "Stand & Deliver", desc: "Full recitation performance", Icon: Mic },
+  ];
   return (
     <div className="h-full overflow-y-auto pb-4 bg-[#FFF9EE]" style={{ scrollbarWidth: "none" }}>
       <div className="px-5 pt-3 flex items-center justify-between">
@@ -260,9 +265,9 @@ function HomeScreen({ onPractice, userName, streak, points, sessions }:
           <button className="relative w-10 h-10 rounded-2xl bg-white border border-[#E7D3A8] flex items-center justify-center shadow-sm">
             <Bell size={18} className="text-[#4B4032]" />
           </button>
-          <div className="w-10 h-10 rounded-2xl bg-[#D6B15E] flex items-center justify-center text-white font-black text-[11px] shadow-sm">
+          <button onClick={onProfile} className="w-10 h-10 rounded-2xl bg-[#D6B15E] flex items-center justify-center text-white font-black text-[11px] shadow-sm active:scale-95 transition-transform">
             {initials}
-          </div>
+          </button>
         </div>
       </div>
       <div className="mx-5 mt-4 bg-gradient-to-br from-[#D6B15E] to-[#BF9840] rounded-3xl p-5 shadow-lg shadow-[#D6B15E]/25 relative overflow-hidden">
@@ -281,7 +286,7 @@ function HomeScreen({ onPractice, userName, streak, points, sessions }:
               <p className="text-white/65 text-[10px] font-semibold uppercase tracking-wide">Total Points</p>
               <p className="text-white font-black text-xl" style={{ fontFamily: "Fraunces, serif" }}>{points} pts</p>
             </div>
-            <button onClick={onPractice}
+            <button onClick={() => onPractice()}
               className="bg-white/20 backdrop-blur-sm rounded-2xl px-4 py-2.5 text-white font-bold text-sm flex items-center gap-1.5 border border-white/25 active:scale-95 transition-transform">
               <Play size={12} fill="white" />
               Practice
@@ -305,20 +310,39 @@ function HomeScreen({ onPractice, userName, streak, points, sessions }:
         ))}
       </div>
       <div className="mx-5 mt-3.5">
-        <button onClick={onPractice}
-          className="w-full bg-[#4B4032] rounded-3xl p-4 flex items-center justify-between active:scale-95 transition-transform">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-[#D6B15E] flex items-center justify-center">
-              <Camera size={22} className="text-white" />
-            </div>
-            <div className="text-left">
-              <p className="text-white font-bold text-[15px]">Scan a Module</p>
-              <p className="text-white/55 text-xs">Point camera at printed material</p>
-            </div>
-          </div>
-          <ChevronRight size={20} className="text-white/50" />
-        </button>
+        <p className="text-[#7A736B] text-[10px] font-bold uppercase tracking-wider mb-2">Practice Modes</p>
+        <div className="bg-white rounded-3xl overflow-hidden border border-[#E7D3A8]/60 shadow-sm">
+          {practiceModes.map((m, i, arr) => (
+            <button key={m.label} onClick={() => onPractice(m.label)}
+              className={`w-full flex items-center gap-3 px-4 py-3.5 active:bg-[#F4E3B2]/50 transition-colors text-left ${i < arr.length - 1 ? "border-b border-[#E7D3A8]/40" : ""}`}>
+              <div className="w-9 h-9 rounded-xl bg-[#F4E3B2] flex items-center justify-center shrink-0">
+                <m.Icon size={16} className="text-[#D6B15E]" />
+              </div>
+              <div className="flex-1">
+                <p className="text-[#4B4032] font-bold text-sm">{m.label}</p>
+                <p className="text-[#7A736B] text-xs">{m.desc}</p>
+              </div>
+              <ChevronRight size={14} className="text-[#C5B9AE] shrink-0" />
+            </button>
+          ))}
+        </div>
       </div>
+      {history.length > 0 && (
+        <div className="mx-5 mt-3.5">
+          <p className="text-[#7A736B] text-[10px] font-bold uppercase tracking-wider mb-2">Recent</p>
+          <div className="flex flex-col gap-2">
+            {[...history].reverse().slice(0, 2).map((h, i) => (
+              <div key={i} className="bg-white rounded-2xl px-4 py-3 flex items-center gap-3 border border-[#E7D3A8]/60 shadow-sm">
+                <div className="w-9 h-9 rounded-xl bg-[#A8CFA0]/20 flex items-center justify-center shrink-0">
+                  <Check size={16} className="text-[#A8CFA0]" />
+                </div>
+                <p className="text-[#4B4032] text-xs font-medium flex-1 truncate">{h.feedback.slice(0, 50)}{h.feedback.length > 50 ? "…" : ""}</p>
+                <span className="text-sm font-black text-[#A8CFA0] shrink-0">{Math.round((h.scores.accuracy + h.scores.confidence + h.scores.clarity) / 3)}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -326,10 +350,10 @@ function HomeScreen({ onPractice, userName, streak, points, sessions }:
 type Scores = { accuracy: number; confidence: number; clarity: number };
 type Session = { scores: Scores; feedback: string };
 
-function PracticeScreen({ onDone, lang, onBack }: { onDone: (scores: Scores, feedback: string) => void; lang: string; onBack: () => void }) {
+function PracticeScreen({ onDone, lang, onBack, defaultMode = "Paraphrase" }: { onDone: (scores: Scores, feedback: string) => void; lang: string; onBack: () => void; defaultMode?: string }) {
   const [showChoice, setShowChoice] = useState(true);
   const [step, setStep] = useState(0);
-  const [recitMode, setRecitMode] = useState("Paraphrase");
+  const [recitMode, setRecitMode] = useState(defaultMode);
   const [listening, setListening] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [extractedText, setExtractedText] = useState("");
@@ -832,12 +856,12 @@ function ProgressScreen({ history }: { history: Session[] }) {
         <p className="text-[#4B4032] font-bold text-sm mb-3">Achievements</p>
         <div className="flex flex-col gap-2.5">
           {[
-            { name: "First Session", desc: "Complete your first recitation", icon: "⭐", earned: history.length >= 1 },
-            { name: "Study Buddy", desc: "Complete 5 sessions", icon: "📚", earned: history.length >= 5 },
-            { name: "High Scorer", desc: "Score 80%+ overall", icon: "🎯", earned: avg >= 80 },
+            { name: "First Session", desc: "Complete your first recitation", Icon: Star, earned: history.length >= 1 },
+            { name: "Study Buddy", desc: "Complete 5 sessions", Icon: BookOpen, earned: history.length >= 5 },
+            { name: "High Scorer", desc: "Score 80%+ overall", Icon: Award, earned: avg >= 80 },
           ].map((a) => (
             <div key={a.name} className={`flex items-center gap-3.5 p-4 rounded-2xl border ${a.earned ? "bg-white border-[#E7D3A8]/60" : "bg-[#F5F5F0] border-[#E7D3A8]/25 opacity-55"}`}>
-              <div className="w-12 h-12 rounded-2xl bg-[#F4E3B2] flex items-center justify-center text-xl flex-shrink-0">{a.icon}</div>
+              <div className="w-12 h-12 rounded-2xl bg-[#F4E3B2] flex items-center justify-center shrink-0"><a.Icon size={22} className="text-[#D6B15E]" /></div>
               <div className="flex-1">
                 <p className="text-[#4B4032] font-bold text-sm">{a.name}</p>
                 <p className="text-[#7A736B] text-xs">{a.desc}</p>
@@ -900,6 +924,9 @@ function ProfileScreen({ userName, streak, points, sessions, lang, setLang, setU
   { userName: string; streak: number; points: number; sessions: number; lang: string; setLang: (l: string) => void; setUserName: (n: string) => void }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(userName);
+  const [theme, setTheme] = useState("Light");
+  const [textSize, setTextSize] = useState("Standard");
+  const [privacy, setPrivacy] = useState("Private");
   const initials = userName.slice(0, 2).toUpperCase();
   return (
     <div className="h-full overflow-y-auto pb-4 bg-[#FFF9EE]" style={{ scrollbarWidth: "none" }}>
@@ -959,19 +986,48 @@ function ProfileScreen({ userName, streak, points, sessions, lang, setLang, setU
               ))}
             </div>
           </div>
-          {[{ icon: Moon, label: "Theme", value: "Light" }, { icon: Volume2, label: "Accessibility", value: "Standard" }, { icon: Lock, label: "Privacy", value: "Private" }].map((s, i, arr) => {
-            const Icon = s.icon;
-            return (
-              <div key={s.label} className={`flex items-center gap-3 px-4 py-3.5 ${i < arr.length-1 ? "border-b border-[#E7D3A8]/40" : ""}`}>
-                <div className="w-8 h-8 rounded-xl bg-[#F4E3B2] flex items-center justify-center flex-shrink-0">
-                  <Icon size={14} className="text-[#D6B15E]" />
-                </div>
-                <span className="flex-1 text-sm text-[#4B4032] font-medium">{s.label}</span>
-                <span className="text-[11px] text-[#7A736B]">{s.value}</span>
-                <ChevronRight size={13} className="text-[#C5B9AE] flex-shrink-0" />
-              </div>
-            );
-          })}
+          <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[#E7D3A8]/40">
+            <div className="w-8 h-8 rounded-xl bg-[#F4E3B2] flex items-center justify-center flex-shrink-0">
+              <Moon size={14} className="text-[#D6B15E]" />
+            </div>
+            <span className="flex-1 text-sm text-[#4B4032] font-medium">Theme</span>
+            <div className="flex gap-1.5">
+              {["Light", "Dark"].map(t => (
+                <button key={t} onClick={() => setTheme(t)}
+                  className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all ${theme === t ? "bg-[#4B4032] text-white" : "bg-[#E7D3A8] text-[#7A736B]"}`}>
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[#E7D3A8]/40">
+            <div className="w-8 h-8 rounded-xl bg-[#F4E3B2] flex items-center justify-center flex-shrink-0">
+              <Volume2 size={14} className="text-[#D6B15E]" />
+            </div>
+            <span className="flex-1 text-sm text-[#4B4032] font-medium">Text Size</span>
+            <div className="flex gap-1.5">
+              {["Standard", "Large"].map(t => (
+                <button key={t} onClick={() => setTextSize(t)}
+                  className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all ${textSize === t ? "bg-[#4B4032] text-white" : "bg-[#E7D3A8] text-[#7A736B]"}`}>
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-3 px-4 py-3.5">
+            <div className="w-8 h-8 rounded-xl bg-[#F4E3B2] flex items-center justify-center flex-shrink-0">
+              <Lock size={14} className="text-[#D6B15E]" />
+            </div>
+            <span className="flex-1 text-sm text-[#4B4032] font-medium">Privacy</span>
+            <div className="flex gap-1.5">
+              {["Private", "Public"].map(t => (
+                <button key={t} onClick={() => setPrivacy(t)}
+                  className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all ${privacy === t ? "bg-[#4B4032] text-white" : "bg-[#E7D3A8] text-[#7A736B]"}`}>
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
       <div className="mx-5 mt-4">
@@ -1000,6 +1056,7 @@ export default function App() {
   const [streak, setStreak] = useState(0);
   const [points, setPoints] = useState(0);
   const [history, setHistory] = useState<Session[]>([]);
+  const [practiceDefaultMode, setPracticeDefaultMode] = useState("Paraphrase");
 
   const handleDone = useCallback((scores: Scores, feedback: string) => {
     const earned = Math.round((scores.accuracy + scores.confidence + scores.clarity) / 3);
@@ -1008,7 +1065,8 @@ export default function App() {
     setHistory(h => [...h, { scores, feedback }]);
   }, []);
 
-  const handleScanPress = useCallback(() => {
+  const handleScanPress = useCallback((mode?: string) => {
+    if (mode) setPracticeDefaultMode(mode);
     setActiveTab("practice");
     setPracticeKey(k => k + 1);
   }, []);
@@ -1030,8 +1088,8 @@ export default function App() {
           ) : (
             <>
               <div className="flex-1 overflow-hidden min-h-0">
-                {activeTab === "home" && <HomeScreen onPractice={handleScanPress} userName={userName} streak={streak} points={points} sessions={history.length} />}
-                {activeTab === "practice" && <PracticeScreen key={practiceKey} onDone={handleDone} lang={lang} onBack={() => setActiveTab("home")} />}
+                {activeTab === "home" && <HomeScreen onPractice={handleScanPress} onProfile={() => setActiveTab("profile")} userName={userName} streak={streak} points={points} sessions={history.length} history={history} />}
+                {activeTab === "practice" && <PracticeScreen key={practiceKey} onDone={handleDone} lang={lang} onBack={() => setActiveTab("home")} defaultMode={practiceDefaultMode} />}
                 {activeTab === "progress" && <ProgressScreen history={history} />}
                 {activeTab === "sessions" && <SessionsScreen history={history} />}
                 {activeTab === "profile" && <ProfileScreen userName={userName} streak={streak} points={points} sessions={history.length} lang={lang} setLang={setLang} setUserName={setUserName} />}

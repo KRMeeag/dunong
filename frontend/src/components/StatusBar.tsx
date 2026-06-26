@@ -1,12 +1,30 @@
-export default function StatusBar({ dark = false }: { dark?: boolean }) {
-  const c = dark ? '#FFF9EE' : '#4B4032'
+import React from "react";
+
+export default function StatusBar() {
   return (
-    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'14px 26px 0', fontWeight:700, fontSize:15, color:c }}>
-      <span>9:41</span>
-      <span style={{ display:'flex', gap:7, alignItems:'center' }}>
-        <svg width="18" height="13" viewBox="0 0 18 13" fill={c}><rect x="0" y="8" width="3" height="5" rx="1"/><rect x="5" y="5" width="3" height="8" rx="1"/><rect x="10" y="2" width="3" height="11" rx="1"/><rect x="15" y="0" width="3" height="13" rx="1" opacity=".4"/></svg>
-        <svg width="22" height="13" viewBox="0 0 22 13" fill="none" stroke={c} strokeWidth="1.6"><rect x="1" y="2" width="17" height="9" rx="2.5"/><rect x="2.5" y="3.5" width="11" height="6" rx="1" fill={c} stroke="none"/><rect x="19.5" y="4.5" width="1.6" height="4" rx=".8" fill={c} stroke="none"/></svg>
-      </span>
+    <div className="flex items-center justify-between px-7 py-2">
+      <span className="text-[13px] font-bold text-[#4B4032]">9:41</span>
+      <div className="flex items-center gap-1.5">
+        <svg width="16" height="11" viewBox="0 0 16 11" fill="#4B4032">
+          <rect x="0" y="4" width="3" height="7" rx="1" opacity={0.4} />
+          <rect x="4.5" y="2" width="3" height="9" rx="1" opacity={0.65} />
+          <rect x="9" y="0" width="3" height="11" rx="1" />
+          <rect x="13.5" y="1" width="2" height="9" rx="1" />
+        </svg>
+        <svg width="25" height="12" viewBox="0 0 25 12" fill="none">
+          <rect
+            x="0.5"
+            y="0.5"
+            width="21"
+            height="11"
+            rx="3.5"
+            stroke="#4B4032"
+            strokeOpacity={0.35}
+          />
+          <rect x="2" y="2" width="16" height="8" rx="2" fill="#4B4032" />
+          <path d="M23 4v4a2 2 0 000-4z" fill="#4B4032" fillOpacity={0.4} />
+        </svg>
+      </div>
     </div>
-  )
+  );
 }

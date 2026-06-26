@@ -788,6 +788,7 @@ function PracticeScreen({
   preloadedText?: string;
 }) {
   const [showChoice, setShowChoice] = useState(!preloadedText);
+  const [launchCamera, setLaunchCamera] = useState(false);
   const [step, setStep] = useState(preloadedText ? 1 : 0);
   const [recitMode, setRecitMode] = useState(defaultMode);
   const [listening, setListening] = useState(false);
@@ -865,15 +866,28 @@ function PracticeScreen({
   const chunksRef = useRef<Blob[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (launchCamera && !showChoice && step === 0) {
+      setLaunchCamera(false);
+      startCamera();
+    }
+  });
+
   const startCamera = useCallback(async () => {
     try {
-      const s = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
-      });
+      let s: MediaStream;
+      try {
+        s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      } catch {
+        s = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
       streamRef.current = s;
-      if (videoRef.current) videoRef.current.srcObject = s;
+      if (videoRef.current) {
+        videoRef.current.srcObject = s;
+        videoRef.current.play().catch(() => {});
+      }
     } catch {
-      setError("Camera access denied");
+      setError("Camera access denied. Please allow camera permission and try again.");
     }
   }, []);
 
@@ -1113,8 +1127,8 @@ function PracticeScreen({
           </p>
           <button
             onClick={() => {
+              setLaunchCamera(true);
               setShowChoice(false);
-              setTimeout(() => startCamera(), 50);
             }}
             className="w-full bg-[#4B4032] rounded-3xl p-5 flex items-center gap-4 active:scale-95 transition-transform"
           >
@@ -1187,6 +1201,7 @@ function PracticeScreen({
             ref={videoRef}
             autoPlay
             playsInline
+            muted
             className="absolute inset-0 w-full h-full object-cover"
           />
           {[

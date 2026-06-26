@@ -95,9 +95,8 @@ source tree is complete and syntax-checked clean.
 **Mobile app (Expo / React Native + TypeScript)**
 - Home screen -- streak badge, points-today glance, scan CTA,
   resume-last-session card
-- Scan screen -- live camera viewfinder, gallery upload fallback,
-  on-device text-block detection, tap-to-lock ("Sipat-Aral"), "Tama
-  ba?" confirmation step
+- Scan screen -- camera capture (photo only, not real-time feed),
+  gallery upload fallback, tap-to-lock ("Sipat-Aral")
 - Recitation screen -- confidence ladder selector, mic record loop,
   live transcript display
 - Feedback screen -- points earned, three skill rings (accuracy /
@@ -121,11 +120,12 @@ Said plainly, so nothing here gets overclaimed in the pitch:
   student arrives at the answer themselves. Cold-call mode currently
   only swaps the prompt text -- the actual dynamic follow-up-question
   generation is not built yet.
-- **True on-device LLM for offline mode** -- the current offline
-  fallback is a genuine, working rule-based scorer, not yet a real
-  bundled quantized model. A real local LLM needs a native binding
-  (e.g. `llama.rn`) with a GGUF model shipped in the app -- native
-  module setup beyond this scaffold's scope so far.
+- **Live camera feed (real-time scan without capturing a photo)** --
+  current implementation requires the user to take a still photo
+  first; continuous frame analysis is not yet built.
+- **On-device VLM / true offline LLM** -- the current offline
+  fallback is a mock/rule-based scorer. A real bundled quantized
+  model (e.g. a GGUF served locally) is not yet integrated.
 - **Native module linking for camera OCR + voice recognition** on a
   real device build -- needs an EAS dev build or `expo prebuild`;
   Expo Go alone won't fully support these native modules.

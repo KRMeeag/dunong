@@ -382,6 +382,17 @@ export default function PracticeScreen({
           </div>
         </div>
         <div className="flex-1 flex flex-col justify-center gap-4 px-6">
+          {scanning && (
+            <div className="bg-[#F4E3B2] rounded-2xl px-4 py-3 flex items-center gap-3">
+              <div className="w-4 h-4 border-2 border-[#D6B15E] border-t-transparent rounded-full animate-spin shrink-0" />
+              <p className="text-[#4B4032] text-xs font-semibold">Scanning photo...</p>
+            </div>
+          )}
+          {error && !scanning && (
+            <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
+              <p className="text-red-600 text-xs font-semibold">{error}</p>
+            </div>
+          )}
           <p className="text-[#7A736B] text-xs text-center">
             How do you want to scan your module?
           </p>

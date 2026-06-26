@@ -604,6 +604,63 @@ export default function PracticeScreen({
       </div>
     );
 
+  if (showSabihinMo) {
+    const prompts = sabihinMoPrompts[recitMode] ?? sabihinMoPrompts["Paraphrase"];
+    const promptText = lang === "FIL" ? prompts.fil : prompts.en;
+    const lockedPara = selBlock !== null ? paragraphs[selBlock] : extractedText;
+    const modeColors: Record<string, string> = {
+      "Read-Aloud": "#A8CFA0", "Paraphrase": "#D6B15E",
+      "Cold Call": "#4B4032", "Stand & Deliver": "#BF9840",
+    };
+    const accent = modeColors[recitMode] ?? "#D6B15E";
+    return (
+      <div className="h-full flex flex-col bg-[#FFF9EE]">
+        <div className="px-5 pt-3 flex items-center gap-3 shrink-0">
+          <button onClick={() => { window.speechSynthesis.cancel(); setShowSabihinMo(false); }}
+            className="w-10 h-10 rounded-2xl bg-[#E7D3A8] flex items-center justify-center">
+            <ArrowLeft size={18} className="text-[#4B4032]" />
+          </button>
+          <div className="flex-1">
+            <p className="text-[9px] font-bold text-[#7A736B] uppercase tracking-wider">Sabihin Mo</p>
+            <p className="text-[#4B4032] font-black text-sm">{recitMode}</p>
+          </div>
+          <div className="w-3 h-3 rounded-full animate-pulse" style={{ background: accent }} />
+        </div>
+        <div className="flex-1 flex flex-col px-5 pt-5 pb-6 justify-between">
+          {lockedPara && (
+            <div className="bg-white rounded-3xl p-4 border border-[#E7D3A8]/60 shadow-sm mb-5">
+              <p className="text-[9px] font-bold text-[#7A736B] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <Lock size={9} /> Na-lock na Talata
+              </p>
+              <p className="text-[#4B4032] text-xs leading-relaxed line-clamp-5">{lockedPara}</p>
+            </div>
+          )}
+          <div className="flex-1 flex flex-col items-center justify-center gap-5">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-xl" style={{ background: accent }}>
+              <span className="text-white font-black text-xl" style={{ fontFamily: "Fraunces, serif" }}>D</span>
+            </div>
+            <div className="bg-white rounded-3xl rounded-tl-md px-5 py-4 border border-[#E7D3A8]/70 shadow-md max-w-[90%] text-center">
+              <p className="text-[#4B4032] font-bold text-sm leading-relaxed">"{promptText}"</p>
+            </div>
+            <button onClick={playSabihinMoPrompt} disabled={promptPlaying}
+              className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#E7D3A8] bg-white text-[#7A736B] text-xs font-bold active:scale-95 transition-transform disabled:opacity-40">
+              <Volume2 size={13} />
+              {promptPlaying ? (lang === "FIL" ? "Nagsasalita..." : "Speaking...") : (lang === "FIL" ? "Pakinggan ulit" : "Play again")}
+            </button>
+          </div>
+          <button
+            onClick={() => { window.speechSynthesis.cancel(); setShowSabihinMo(false); setStep(2); }}
+            className="w-full py-4 rounded-2xl text-white font-black text-base flex items-center justify-center gap-2.5 shadow-xl active:scale-[0.98] transition-transform"
+            style={{ background: accent, boxShadow: `0 12px 30px ${accent}40` }}
+          >
+            <Mic size={20} />
+            {lang === "FIL" ? "Handa na ako — Magsalita" : "I'm Ready — Speak Now"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (step === 1)
     return (
       <div className="h-full flex flex-col bg-[#FFF9EE]">
@@ -689,75 +746,6 @@ export default function PracticeScreen({
       </div>
     );
 
-  if (showSabihinMo) {
-    const prompts = sabihinMoPrompts[recitMode] ?? sabihinMoPrompts["Paraphrase"];
-    const promptText = lang === "FIL" ? prompts.fil : prompts.en;
-    const lockedPara = selBlock !== null ? paragraphs[selBlock] : extractedText;
-    const modeColors: Record<string, string> = {
-      "Read-Aloud": "#A8CFA0", "Paraphrase": "#D6B15E",
-      "Cold Call": "#4B4032", "Stand & Deliver": "#BF9840",
-    };
-    const accent = modeColors[recitMode] ?? "#D6B15E";
-    return (
-      <div className="h-full flex flex-col bg-[#FFF9EE]">
-        {/* Top bar */}
-        <div className="px-5 pt-3 flex items-center gap-3 shrink-0">
-          <button onClick={() => { window.speechSynthesis.cancel(); setShowSabihinMo(false); }}
-            className="w-10 h-10 rounded-2xl bg-[#E7D3A8] flex items-center justify-center">
-            <ArrowLeft size={18} className="text-[#4B4032]" />
-          </button>
-          <div className="flex-1">
-            <p className="text-[9px] font-bold text-[#7A736B] uppercase tracking-wider">Sabihin Mo</p>
-            <p className="text-[#4B4032] font-black text-sm">{recitMode}</p>
-          </div>
-          <div className="w-3 h-3 rounded-full animate-pulse" style={{ background: accent }} />
-        </div>
-
-        <div className="flex-1 flex flex-col px-5 pt-5 pb-6 justify-between">
-          {/* Locked paragraph */}
-          {lockedPara && (
-            <div className="bg-white rounded-3xl p-4 border border-[#E7D3A8]/60 shadow-sm mb-5">
-              <p className="text-[9px] font-bold text-[#7A736B] uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <Lock size={9} /> Na-lock na Talata
-              </p>
-              <p className="text-[#4B4032] text-xs leading-relaxed line-clamp-5">{lockedPara}</p>
-            </div>
-          )}
-
-          {/* AI teacher prompt card */}
-          <div className="flex-1 flex flex-col items-center justify-center gap-5">
-            {/* Avatar */}
-            <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-xl" style={{ background: accent }}>
-              <span className="text-white font-black text-xl" style={{ fontFamily: "Fraunces, serif" }}>D</span>
-            </div>
-
-            {/* Prompt bubble */}
-            <div className="bg-white rounded-3xl rounded-tl-md px-5 py-4 border border-[#E7D3A8]/70 shadow-md max-w-[90%] text-center">
-              <p className="text-[#4B4032] font-bold text-sm leading-relaxed">"{promptText}"</p>
-            </div>
-
-            {/* Replay TTS button */}
-            <button onClick={playSabihinMoPrompt} disabled={promptPlaying}
-              className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#E7D3A8] bg-white text-[#7A736B] text-xs font-bold active:scale-95 transition-transform disabled:opacity-40">
-              <Volume2 size={13} />
-              {promptPlaying ? (lang === "FIL" ? "Nagsasalita..." : "Speaking...") : (lang === "FIL" ? "Pakinggan ulit" : "Play again")}
-            </button>
-          </div>
-
-          {/* CTA */}
-          <button
-            onClick={() => { window.speechSynthesis.cancel(); setShowSabihinMo(false); setStep(2); }}
-            className="w-full py-4 rounded-2xl text-white font-black text-base flex items-center justify-center gap-2.5 shadow-xl active:scale-[0.98] transition-transform"
-            style={{ background: accent, boxShadow: `0 12px 30px ${accent}40` }}
-          >
-            <Mic size={20} />
-            {lang === "FIL" ? "Handa na ako — Magsalita" : "I'm Ready — Speak Now"}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   if (step === 2) {
     const modes = ["Paraphrase", "Read-Aloud", "Cold Call", "Stand & Deliver"];
     return (
@@ -818,79 +806,88 @@ export default function PracticeScreen({
               </p>
             </div>
           ))}
-        <div className="flex-1 flex flex-col items-center justify-center gap-4">
+        <div className="flex-1 flex flex-col items-center justify-center gap-6">
           {error && (
             <p className="text-red-500 text-xs px-5 text-center">{error}</p>
           )}
+
+          {/* Waveform — visible only while recording */}
+          <div className="flex items-end justify-center gap-0.75 h-14">
+            {listening
+              ? [6,10,18,26,32,26,36,22,30,18,28,16,24,12,20].map((h, i) => (
+                  <div
+                    key={i}
+                    className="w-1.25 rounded-full bg-red-400"
+                    style={{
+                      height: `${h}px`,
+                      animation: `pulse ${0.4 + (i % 5) * 0.12}s ease-in-out infinite alternate`,
+                      animationDelay: `${i * 0.06}s`,
+                    }}
+                  />
+                ))
+              : submitting
+                ? [8,14,20,14,8,14,20,14,8,14,20,14,8].map((h, i) => (
+                    <div
+                      key={i}
+                      className="w-1.25 rounded-full bg-[#D6B15E]/50"
+                      style={{ height: `${h}px` }}
+                    />
+                  ))
+                : [4,8,12,8,4,8,12,8,4,8,12,8,4].map((h, i) => (
+                    <div
+                      key={i}
+                      className="w-1.25 rounded-full bg-[#E7D3A8]"
+                      style={{ height: `${h}px` }}
+                    />
+                  ))}
+          </div>
+
+          {/* Mic button */}
           <div className="relative flex items-center justify-center">
             {listening && (
               <>
-                <div className="absolute w-36 h-36 rounded-full bg-[#D6B15E]/15 animate-ping" />
-                <div
-                  className="absolute w-28 h-28 rounded-full bg-[#D6B15E]/20 animate-ping"
-                  style={{ animationDelay: "0.25s" }}
-                />
+                <div className="absolute w-44 h-44 rounded-full bg-red-400/10 animate-ping" style={{ animationDuration: "1.2s" }} />
+                <div className="absolute w-36 h-36 rounded-full bg-red-400/15 animate-ping" style={{ animationDuration: "1.2s", animationDelay: "0.3s" }} />
               </>
             )}
-            {recitMode === "Read-Aloud" ? (
-              <button
-                onClick={listening ? stopRecordingAndSubmit : startRecording}
-                disabled={submitting}
-                className={`w-28 h-28 rounded-full flex items-center justify-center shadow-2xl transition-all active:scale-95 disabled:opacity-50 ${listening ? "bg-red-500 shadow-red-500/35" : "bg-[#A8CFA0] shadow-[#A8CFA0]/35"}`}
-              >
-                {listening
-                  ? <StopCircle size={40} className="text-white" />
-                  : <Mic size={40} className="text-white" />}
-              </button>
-            ) : (
-              <button
-                onMouseDown={startRecording}
-                onMouseUp={stopRecordingAndSubmit}
-                onTouchStart={(e) => {
-                  e.preventDefault();
-                  startRecording();
-                }}
-                onTouchEnd={stopRecordingAndSubmit}
-                disabled={submitting}
-                className={`w-28 h-28 rounded-full flex items-center justify-center shadow-2xl transition-all active:scale-95 disabled:opacity-50 ${listening ? "bg-[#D6B15E] shadow-[#D6B15E]/35" : "bg-[#4B4032] shadow-[#4B4032]/20"}`}
-              >
-                <Mic size={40} className="text-white" />
-              </button>
-            )}
+            <button
+              onClick={listening ? stopRecordingAndSubmit : startRecording}
+              disabled={submitting}
+              className={`w-28 h-28 rounded-full flex items-center justify-center shadow-2xl transition-all active:scale-95 disabled:opacity-50 ${
+                listening
+                  ? "bg-red-500 shadow-red-500/40"
+                  : recitMode === "Read-Aloud"
+                    ? "bg-[#A8CFA0] shadow-[#A8CFA0]/35"
+                    : "bg-[#4B4032] shadow-[#4B4032]/20"
+              }`}
+            >
+              {listening
+                ? <StopCircle size={44} className="text-white" />
+                : <Mic size={44} className="text-white" />}
+            </button>
           </div>
-          <p className="text-[#7A736B] text-sm font-semibold">
-            {submitting
-              ? "Processing..."
-              : recitMode === "Read-Aloud"
-                ? listening
-                  ? "Recording — tap to stop"
-                  : "Tap to start reading"
+
+          {/* Status label */}
+          <div className="flex flex-col items-center gap-1">
+            {listening && (
+              <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-full px-4 py-1.5">
+                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                <span className="text-red-600 text-xs font-bold uppercase tracking-wide">Recording</span>
+              </div>
+            )}
+            <p className="text-[#7A736B] text-sm font-semibold">
+              {submitting
+                ? "Processing your answer..."
                 : listening
-                  ? "Listening..."
-                  : "Hold to Speak"}
-          </p>
-          {listening && (
-            <div className="flex items-end gap-1 h-10">
-              {[4, 8, 14, 10, 18, 12, 6, 16, 9].map((h, i) => (
-                <div
-                  key={i}
-                  className="w-1.5 bg-[#D6B15E] rounded-full animate-pulse"
-                  style={{
-                    height: `${h + 4}px`,
-                    animationDelay: `${i * 0.08}s`,
-                  }}
-                />
-              ))}
-            </div>
-          )}
-          {submitting && transcript && (
-            <div className="mx-5 bg-white rounded-2xl p-3.5 border border-[#E7D3A8]/60 w-full">
-              <p className="text-[9px] font-bold text-[#7A736B] uppercase tracking-wider mb-1">
-                Dunong heard
-              </p>
-              <p className="text-[#4B4032] text-xs leading-relaxed italic">
-                "{transcript}"
-              </p>
+                  ? "Speak clearly — tap stop when done"
+                  : "Tap the mic to start speaking"}
+            </p>
+          </div>
+
+          {submitting && (
+            <div className="flex items-center gap-3 bg-[#F4E3B2] rounded-2xl px-5 py-3 border border-[#E7D3A8]">
+              <div className="w-4 h-4 border-2 border-[#D6B15E] border-t-transparent rounded-full animate-spin shrink-0" />
+              <p className="text-[#4B4032] text-xs font-semibold">Dunong is evaluating your answer…</p>
             </div>
           )}
         </div>

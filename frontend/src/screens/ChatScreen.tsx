@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
-import { Globe, RotateCcw, Mic, Play, Square, Plus, MessageSquare, Trash2 } from "lucide-react";
+import { Globe, Mic, Play, Square, Plus, MessageSquare, Trash2 } from "lucide-react";
 import { ChatMessage, ChatSession } from "../types";
 import { offlineChat } from "../types";
 import { API } from "../constants";
@@ -24,8 +24,8 @@ export default function ChatScreen({
   lang: string;
   sessions: ChatSession[];
   setSessions: React.Dispatch<React.SetStateAction<ChatSession[]>>;
-  activeChatId: string | null;
-  setActiveChatId: React.Dispatch<React.SetStateAction<string | null>>;
+  activeChatId: string;
+  setActiveChatId: React.Dispatch<React.SetStateAction<string>>;
 }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -39,20 +39,9 @@ export default function ChatScreen({
   const tabsRef = useRef<HTMLDivElement>(null);
   const isFil = lang === "FIL";
 
-  // Ensure there's always at least one session; create one if empty
-  useEffect(() => {
-    if (sessions.length === 0) {
-      const s = newSession();
-      setSessions([s]);
-      setActiveChatId(s.id);
-    } else if (!activeChatId || !sessions.find((s) => s.id === activeChatId)) {
-      setActiveChatId(sessions[0].id);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const activeSession = sessions.find((s) => s.id === activeChatId) ?? sessions[0] ?? null;
-  const messages: ChatMessage[] = activeSession?.messages ?? [];
+  // Sessions always have at least one item (initialized in App.tsx)
+  const activeSession = sessions.find((s) => s.id === activeChatId) ?? sessions[0];
+  const messages: ChatMessage[] = activeSession.messages;
 
   const greeting = useCallback((l: string): ChatMessage => ({
     id: "greeting",
@@ -64,12 +53,11 @@ export default function ChatScreen({
 
   // Add greeting to a brand-new session when it becomes active
   useEffect(() => {
-    if (!activeSession) return;
-    if (activeSession.messages.length === 0) {
-      setSessions((prev) => prev.map((s) =>
-        s.id === activeSession.id ? { ...s, messages: [greeting(lang)] } : s
-      ));
-    }
+    setSessions((prev) => prev.map((s) => {
+      if (s.id !== activeChatId) return s;
+      if (s.messages.length > 0) return s;
+      return { ...s, messages: [greeting(voiceAccent)] };
+    }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeChatId]);
 
@@ -102,10 +90,6 @@ export default function ChatScreen({
     if (active) active.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
   }, [activeChatId]);
 
-  const updateSession = useCallback((id: string, updater: (s: ChatSession) => ChatSession) => {
-    setSessions((prev) => prev.map((s) => (s.id === id ? updater(s) : s)));
-  }, [setSessions]);
-
   const speak = useCallback((text: string) => {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
@@ -115,19 +99,25 @@ export default function ChatScreen({
     window.speechSynthesis.speak(utt);
   }, [voiceAccent]);
 
-  const sendMessage = useCallback(async (text: string) => {
-    if (!text.trim() || loading || !activeSession) return;
-    const sessionId = activeSession.id;
-    const userMsg: ChatMessage = { id: Date.now().toString(), role: "user", text: text.trim() };
-    let currentMessages: ChatMessage[] = [];
+  // Keep a ref to sessions so async callbacks always see current state
+  const sessionsRef = useRef(sessions);
+  useEffect(() => { sessionsRef.current = sessions; }, [sessions]);
 
-    // Optimistically add user message
+  const sendMessage = useCallback(async (text: string) => {
+    if (!text.trim() || loading) return;
+    const responseLang = voiceAccent === "EN" ? "EN" : "FIL";
+    // Grab current session from ref to avoid stale closure
+    const session = sessionsRef.current.find((s) => s.id === activeChatId) ?? sessionsRef.current[0];
+    const sessionId = session.id;
+    const userMsg: ChatMessage = { id: Date.now().toString(), role: "user", text: text.trim() };
+    // Snapshot messages before state update
+    const prevMessages = session.messages;
+    const currentMessages = [...prevMessages, userMsg];
+
     setSessions((prev) => prev.map((s) => {
       if (s.id !== sessionId) return s;
-      const updated = [...s.messages, userMsg];
-      currentMessages = updated;
       const title = s.title === "New Chat" ? text.trim().slice(0, 30) : s.title;
-      return { ...s, messages: updated, title };
+      return { ...s, messages: currentMessages, title };
     }));
     setInput("");
     setLoading(true);
@@ -136,14 +126,14 @@ export default function ChatScreen({
       let reply: string;
       if (!isOnline) {
         await new Promise((r) => setTimeout(r, 700));
-        reply = offlineChat(text, lang);
+        reply = offlineChat(text, responseLang);
       } else {
         const res = await fetch(`${API}/api/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             messages: currentMessages.map((m) => ({ role: m.role, content: m.text })),
-            lang,
+            lang: responseLang,
           }),
         });
         const data = await res.json();
@@ -151,19 +141,23 @@ export default function ChatScreen({
         reply = data.message;
       }
       const aiMsg: ChatMessage = { id: (Date.now() + 1).toString(), role: "assistant", text: reply };
-      updateSession(sessionId, (s) => ({ ...s, messages: [...s.messages, aiMsg] }));
+      setSessions((prev) => prev.map((s) =>
+        s.id === sessionId ? { ...s, messages: [...s.messages, aiMsg] } : s
+      ));
       speak(reply);
     } catch {
       const errMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        text: isFil ? "May problema sa koneksyon. Subukan muli." : "Connection error. Please try again.",
+        text: responseLang === "FIL" ? "May problema sa koneksyon. Subukan muli." : "Connection error. Please try again.",
       };
-      updateSession(sessionId, (s) => ({ ...s, messages: [...s.messages, errMsg] }));
+      setSessions((prev) => prev.map((s) =>
+        s.id === sessionId ? { ...s, messages: [...s.messages, errMsg] } : s
+      ));
     } finally {
       setLoading(false);
     }
-  }, [loading, activeSession, isOnline, lang, speak, isFil, setSessions, updateSession]);
+  }, [loading, activeChatId, isOnline, voiceAccent, speak, setSessions]);
 
   const stopListening = useCallback(async () => {
     vadCleanupRef.current?.();

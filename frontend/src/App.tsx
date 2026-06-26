@@ -42,8 +42,11 @@ export default function App() {
   const [practiceDefaultMode, setPracticeDefaultMode] = useState("Paraphrase");
   const [practicePreloadedText, setPracticePreloadedText] = useState<string | undefined>(undefined);
   const [practiceReturnTab, setPracticeReturnTab] = useState<string>("home");
-  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
-  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>(() => {
+    const id = "default-chat";
+    return [{ id, title: "New Chat", messages: [], createdAt: new Date().toLocaleDateString() }];
+  });
+  const [activeChatId, setActiveChatId] = useState<string>("default-chat");
   const [notebooks, setNotebooks] = useState<Notebook[]>([]);
 
   useEffect(() => {

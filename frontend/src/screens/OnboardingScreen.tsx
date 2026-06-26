@@ -33,14 +33,11 @@ export default function OnboardingScreen({
       <div className="flex-1 flex items-center justify-center px-7">
         {step === 0 && (
           <div className="flex flex-col items-center text-center gap-5">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#FFFDF6] to-[#D6B15E] flex items-center justify-center shadow-xl shadow-[#D6B15E]/40">
-              <span
-                className="text-4xl font-black text-[#4B4032]"
-                style={{ fontFamily: "Fraunces, serif" }}
-              >
-                D
-              </span>
-            </div>
+            <img
+              src="/Welcoming_transparent.png"
+              alt="Welcome"
+              className="w-56 h-56 object-contain"
+            />
             <h1
               className="text-3xl font-black text-[#4B4032]"
               style={{ fontFamily: "Fraunces, serif" }}

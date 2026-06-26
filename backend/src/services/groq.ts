@@ -21,7 +21,8 @@ export async function transcribeWithWhisper(audioBuffer: Buffer, filename: strin
   const ab = audioBuffer.buffer instanceof SharedArrayBuffer
     ? new Uint8Array(audioBuffer).buffer
     : audioBuffer.buffer.slice(audioBuffer.byteOffset, audioBuffer.byteOffset + audioBuffer.byteLength) as ArrayBuffer
-  const file = new File([ab], filename, { type: 'audio/webm' })
+  const type = filename.endsWith('.mp4') ? 'audio/mp4' : 'audio/webm'
+  const file = new File([ab], filename, { type })
   const response = await groq.audio.transcriptions.create({
     file,
     model: 'whisper-large-v3-turbo',

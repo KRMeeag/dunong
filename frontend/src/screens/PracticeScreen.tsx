@@ -110,6 +110,7 @@ export default function PracticeScreen({
   const streamRef = useRef<MediaStream | null>(null);
   const mediaRecRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const recMimeRef = useRef<string>("audio/webm");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const startCamera = useCallback(async () => {
@@ -218,11 +219,18 @@ export default function PracticeScreen({
     }
     setScanning(true);
     setError("");
+    const MAX = 1280;
+    let cw = vid.videoWidth;
+    let ch = vid.videoHeight;
+    if (cw > MAX || ch > MAX) {
+      if (cw > ch) { ch = Math.round((ch / cw) * MAX); cw = MAX; }
+      else { cw = Math.round((cw / ch) * MAX); ch = MAX; }
+    }
     const canvas = document.createElement("canvas");
-    canvas.width = vid.videoWidth;
-    canvas.height = vid.videoHeight;
-    canvas.getContext("2d")!.drawImage(vid, 0, 0);
-    const base64 = canvas.toDataURL("image/jpeg").split(",")[1];
+    canvas.width = cw;
+    canvas.height = ch;
+    canvas.getContext("2d")!.drawImage(vid, 0, 0, cw, ch);
+    const base64 = canvas.toDataURL("image/jpeg", 0.85).split(",")[1];
     try {
       const res = await fetch(`${API}/api/scan`, {
         method: "POST",
@@ -275,7 +283,13 @@ export default function PracticeScreen({
     navigator.mediaDevices
       .getUserMedia({ audio: true })
       .then((s) => {
-        const mr = new MediaRecorder(s, { mimeType: "audio/webm" });
+        const mime = MediaRecorder.isTypeSupported("audio/webm")
+          ? "audio/webm"
+          : MediaRecorder.isTypeSupported("audio/mp4")
+            ? "audio/mp4"
+            : "";
+        recMimeRef.current = mime || "audio/webm";
+        const mr = new MediaRecorder(s, mime ? { mimeType: mime } : undefined);
         mr.ondataavailable = (e) => {
           if (e.data.size > 0) chunksRef.current.push(e.data);
         };
@@ -300,10 +314,12 @@ export default function PracticeScreen({
     setSubmitting(true);
     setError("");
     await new Promise((r) => setTimeout(r, 300));
-    const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+    const mime = recMimeRef.current;
+    const blob = new Blob(chunksRef.current, { type: mime });
+    const audioFilename = mime === "audio/mp4" ? "audio.mp4" : "audio.webm";
     try {
       const fd = new FormData();
-      fd.append("audio", blob, "audio.webm");
+      fd.append("audio", blob, audioFilename);
       const tRes = await fetch(`${API}/api/transcribe`, {
         method: "POST",
         body: fd,

@@ -140,7 +140,12 @@ export default function ChatScreen({
     navigator.mediaDevices
       .getUserMedia({ audio: true })
       .then((stream) => {
-        const mr = new MediaRecorder(stream, { mimeType: "audio/webm" });
+        const mime = MediaRecorder.isTypeSupported("audio/webm")
+          ? "audio/webm"
+          : MediaRecorder.isTypeSupported("audio/mp4")
+            ? "audio/mp4"
+            : "";
+        const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
         mr.ondataavailable = (e) => {
           if (e.data.size > 0) chunksRef.current.push(e.data);
         };
@@ -155,14 +160,16 @@ export default function ChatScreen({
     setListening(false);
     if (!mediaRecRef.current) return;
     const mr = mediaRecRef.current;
+    const mime = mr.mimeType || "audio/webm";
     mr.stop();
     mr.stream.getTracks().forEach((t) => t.stop());
     await new Promise((r) => setTimeout(r, 300));
-    const blob = new Blob(chunksRef.current as BlobPart[], { type: "audio/webm" });
+    const blob = new Blob(chunksRef.current as BlobPart[], { type: mime });
+    const audioFilename = mime.includes("mp4") ? "audio.mp4" : "audio.webm";
     setLoading(true);
     try {
       const fd = new FormData();
-      fd.append("audio", blob, "audio.webm");
+      fd.append("audio", blob, audioFilename);
       const res = await fetch(`${API}/api/transcribe`, {
         method: "POST",
         body: fd,

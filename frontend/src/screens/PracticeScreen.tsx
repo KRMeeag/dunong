@@ -503,20 +503,20 @@ export default function PracticeScreen({
             </span>
           </button>
           <button
-            onClick={startCamera}
-            className="w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-xl active:scale-95 transition-transform"
+            onClick={captureAndScan}
+            disabled={scanning}
+            className="w-20 h-20 rounded-full bg-[#D6B15E] flex items-center justify-center shadow-xl shadow-[#D6B15E]/40 active:scale-95 transition-transform disabled:opacity-50"
           >
-            <div className="w-16 h-16 rounded-full border-4 border-[#E7D3A8] flex items-center justify-center">
-              <Camera size={26} className="text-[#4B4032]" />
+            <div className="w-16 h-16 rounded-full border-4 border-white/30 flex items-center justify-center">
+              {scanning ? <ScanLine size={26} className="text-white animate-pulse" /> : <Camera size={26} className="text-white" />}
             </div>
           </button>
           <button
-            onClick={captureAndScan}
-            disabled={scanning}
-            className="w-14 h-14 rounded-2xl bg-[#D6B15E] disabled:opacity-40 flex flex-col items-center justify-center gap-1.5 active:scale-95 transition-transform"
+            onClick={startCamera}
+            className="w-14 h-14 rounded-2xl bg-[#2A2010] flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform"
           >
-            <ScanLine size={18} className="text-white" />
-            <span className="text-white/80 text-[9px] font-semibold">Scan</span>
+            <RotateCcw size={18} className="text-[#D6B15E]" />
+            <span className="text-[#D6B15E]/70 text-[9px] font-semibold">Retry</span>
           </button>
         </div>
       </div>

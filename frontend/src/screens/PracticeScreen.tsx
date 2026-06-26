@@ -12,6 +12,8 @@ import {
   Lock,
   Volume2,
   Zap,
+  Check,
+  PenLine,
 } from "lucide-react";
 import SkillRing from "../components/SkillRing";
 import { Scores } from "../types";
@@ -57,6 +59,8 @@ export default function PracticeScreen({
   const [error, setError] = useState("");
   const [showSabihinMo, setShowSabihinMo] = useState(false);
   const [promptPlaying, setPromptPlaying] = useState(false);
+  const [showTamaBa, setShowTamaBa] = useState(false);
+  const [tamaBaText, setTamaBaText] = useState("");
 
   useEffect(() => {
     if (step === 3 && feedback) {
@@ -177,11 +181,9 @@ export default function PracticeScreen({
           .split(/\n\n+/)
           .map((p: string) => p.trim())
           .filter((p: string) => p.length > 20);
-        setExtractedText(text);
-        setParagraphs(paras.length ? paras : [text]);
         stopCamera();
-        setShowChoice(false);
-        setStep(1);
+        setTamaBaText(text);
+        setShowTamaBa(true);
       } catch (e: any) {
         setError(e.message || "Upload failed");
       } finally {
@@ -219,10 +221,9 @@ export default function PracticeScreen({
         .split(/\n\n+/)
         .map((p: string) => p.trim())
         .filter((p: string) => p.length > 20);
-      setExtractedText(text);
-      setParagraphs(paras.length ? paras : [text]);
       stopCamera();
-      setStep(1);
+      setTamaBaText(text);
+      setShowTamaBa(true);
     } catch (e: any) {
       setError(e.message || "Scan failed");
     } finally {
@@ -533,6 +534,76 @@ export default function PracticeScreen({
           >
             <RotateCcw size={18} className="text-[#D6B15E]" />
             <span className="text-[#D6B15E]/70 text-[9px] font-semibold">Retry</span>
+          </button>
+        </div>
+      </div>
+    );
+
+  if (showTamaBa)
+    return (
+      <div className="h-full flex flex-col bg-[#FFF9EE]">
+        <div className="px-5 pt-3 flex items-center gap-3 shrink-0">
+          <button
+            onClick={() => { setShowTamaBa(false); startCamera(); }}
+            className="w-10 h-10 rounded-2xl bg-[#E7D3A8] flex items-center justify-center"
+          >
+            <ArrowLeft size={18} className="text-[#4B4032]" />
+          </button>
+          <div className="flex-1">
+            <h3 className="text-[#4B4032] font-black text-base" style={{ fontFamily: "Fraunces, serif" }}>
+              Tama Ba?
+            </h3>
+            <p className="text-[#7A736B] text-xs">
+              {lang === "FIL" ? "Suriin at i-edit ang na-scan na teksto" : "Review and edit the scanned text"}
+            </p>
+          </div>
+          <div className="w-8 h-8 rounded-xl bg-[#F4E3B2] flex items-center justify-center">
+            <PenLine size={14} className="text-[#D6B15E]" />
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 mt-4 pb-4" style={{ scrollbarWidth: "none" }}>
+          <div className="bg-white rounded-3xl p-4 border border-[#E7D3A8]/60 shadow-sm mb-3">
+            <p className="text-[9px] font-bold text-[#7A736B] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <ScanLine size={9} />
+              {lang === "FIL" ? "Na-extract na Teksto — I-edit kung may mali" : "Extracted Text — Edit any mistakes"}
+            </p>
+            <textarea
+              value={tamaBaText}
+              onChange={(e) => setTamaBaText(e.target.value)}
+              className="w-full text-[#4B4032] text-xs leading-relaxed outline-none resize-none bg-transparent"
+              rows={14}
+            />
+          </div>
+          <div className="bg-[#F4E3B2] rounded-2xl px-4 py-3 border border-[#E7D3A8]">
+            <p className="text-[#4B4032] text-xs leading-relaxed">
+              {lang === "FIL"
+                ? "I-edit ang anumang salita na hindi tama. Kapag tama na ang lahat, pindutin ang 'Tama Na!'"
+                : "Fix any word the scanner got wrong. When everything looks right, tap 'Looks Good!'"}
+            </p>
+          </div>
+        </div>
+
+        <div className="px-5 pb-8 pt-2 shrink-0 flex gap-3">
+          <button
+            onClick={() => { setShowTamaBa(false); startCamera(); }}
+            className="w-14 h-14 rounded-2xl bg-[#E7D3A8] flex items-center justify-center shrink-0 active:scale-95 transition-transform"
+          >
+            <Camera size={20} className="text-[#4B4032]" />
+          </button>
+          <button
+            onClick={() => {
+              const paras = tamaBaText.split(/\n\n+/).map((p) => p.trim()).filter((p) => p.length > 20);
+              setExtractedText(tamaBaText);
+              setParagraphs(paras.length ? paras : [tamaBaText]);
+              setShowTamaBa(false);
+              setStep(1);
+            }}
+            disabled={!tamaBaText.trim()}
+            className="flex-1 py-4 bg-[#4B4032] rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-40"
+          >
+            <Check size={18} />
+            {lang === "FIL" ? "Tama Na!" : "Looks Good!"}
           </button>
         </div>
       </div>

@@ -56,7 +56,7 @@ The frontend proxies `/api/*` to `localhost:3001` automatically in development.
 | `frontend/.env` | `VITE_API_URL` | Backend URL for deployed builds (leave empty for local dev) |
 
 ### Deployed Version
-- **Frontend:** [\[Deployment link\]](https://dunong-pinoy.vercel.app/)
+- **Frontend:** https://dunong-pinoy.vercel.app
 - **Backend:** https://dunong-ihba.onrender.com
 
 ---

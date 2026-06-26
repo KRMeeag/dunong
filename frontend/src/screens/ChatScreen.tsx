@@ -31,7 +31,7 @@ export default function ChatScreen({
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [voiceAccent, setVoiceAccent] = useState<"FIL" | "EN">(lang === "FIL" ? "FIL" : "EN");
+  const [voiceAccent, setVoiceAccent] = useState<"FIL" | "EN">("EN");
   const [isSpeaking, setIsSpeaking] = useState(false);
   const mediaRecRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
@@ -61,10 +61,6 @@ export default function ChatScreen({
     }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeChatId]);
-
-  useEffect(() => {
-    setVoiceAccent(lang === "FIL" ? "FIL" : "EN");
-  }, [lang]);
 
   useEffect(() => {
     const goOnline = () => setIsOnline(true);

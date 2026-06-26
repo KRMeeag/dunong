@@ -272,11 +272,16 @@ export default function PracticeScreen({
   }, []);
 
   const stopRecordingAndSubmit = useCallback(async () => {
-    setListening(false);
     if (!mediaRecRef.current) return;
     const mr = mediaRecRef.current;
-    mr.stop();
-    mr.stream.getTracks().forEach((t) => t.stop());
+    mediaRecRef.current = null; // clear immediately to prevent double-stop
+    setListening(false);
+    try {
+      mr.stop();
+      mr.stream.getTracks().forEach((t) => t.stop());
+    } catch {
+      // MediaRecorder may already be inactive — safe to ignore
+    }
     setSubmitting(true);
     setError("");
     await new Promise((r) => setTimeout(r, 300));
@@ -851,7 +856,15 @@ export default function PracticeScreen({
               </>
             )}
             <button
-              onClick={listening ? stopRecordingAndSubmit : startRecording}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                if (!submitting) listening ? stopRecordingAndSubmit() : startRecording();
+              }}
+              onClick={(e) => {
+                // onClick handles non-touch (desktop); touch already handled above
+                if (e.detail === 0) return;
+                if (!submitting) listening ? stopRecordingAndSubmit() : startRecording();
+              }}
               disabled={submitting}
               className={`w-28 h-28 rounded-full flex items-center justify-center shadow-2xl transition-all active:scale-95 disabled:opacity-50 ${
                 listening

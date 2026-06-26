@@ -56,7 +56,7 @@ The frontend proxies `/api/*` to `localhost:3001` automatically in development.
 | `frontend/.env` | `VITE_API_URL` | Backend URL for deployed builds (leave empty for local dev) |
 
 ### Deployed Version
-- **Frontend:** [Deployment link]
+- **Frontend:** [\[Deployment link\]](https://dunong-pinoy.vercel.app/)
 - **Backend:** https://dunong-ihba.onrender.com
 
 ---
@@ -92,17 +92,25 @@ Browser / Phone
 
 ## 4. AI Disclosure
 
-Dunong uses AI in the following ways:
+### AI tools used to build Dunong
 
-| Feature | Model | Purpose |
-|---|---|---|
-| Scan Module (OCR) | Llama 4 Scout 17B (Groq) | Extract printed text from photos |
-| Coaching Feedback | Llama 3.3 70B (Groq) | Score recitation and generate personalized feedback in Filipino/English |
-| Speech Transcription | Whisper Large V3 Turbo (Groq) | Convert student's spoken answer to text |
-| AI Chat (Dunong AI) | Llama 3.3 70B (Groq) | Answer student questions about any subject |
-| Ask Dunong | Llama 3.3 70B (Groq) | Explain selected paragraphs in Filipino or English |
-| Text-to-Speech | Web Speech API | Read prompts and feedback aloud (on-device, not an LLM) |
-| Offline fallback | Keyword rules (no AI) | Basic responses when there is no internet connection |
+| Tool | How it was used |
+|---|---|
+| Claude (Anthropic) | Primary coding assistant — UI implementation, bug fixes, architecture decisions |
+| ChatGPT (OpenAI) | Generated the mascot PNG images used in the app |
+| Groq Console | Testing and validating AI model responses during development |
+
+### AI embedded inside the product
+
+| Feature | Model | Provider | Purpose |
+|---|---|---|---|
+| Scan Module (OCR) | Llama 4 Scout 17B | Groq | Extract printed text from a photo |
+| Coaching Feedback | Llama 3.3 70B | Groq | Score recitation and generate personalized feedback in Filipino/English |
+| Speech Transcription | Whisper Large V3 Turbo | Groq | Convert student's spoken answer to text |
+| AI Chat | Llama 3.3 70B | Groq | Answer student questions about any subject |
+| Ask Dunong | Llama 3.3 70B | Groq | Explain a selected paragraph in Filipino or English |
+| Text-to-Speech | Web Speech API | On-device | Read prompts and feedback aloud (no API cost, no data sent) |
+| Offline fallback | Keyword rules | None | Basic responses when there is no internet connection |
 
 **Privacy:** No images are stored. No audio is stored. Only the OCR-extracted text and speech transcript (plain text, a few KB each) are sent to the Groq API for processing. Nothing is persisted beyond the current session.
 
@@ -112,9 +120,9 @@ Dunong uses AI in the following ways:
 
 **Team Name:** Fine Tuned
 
-| Name | Role |
-|---|---|
-| Shintaro Suzuki | |
-| Melfred Bernabe | |
-| Kenth Razen Magbanua | |
-| Shana Czane M. Cruzat | |
+| Name |
+|---|
+| Shintaro Suzuki |
+| Melfred Bernabe |
+| Kenth Razen Magbanua |
+| Shana Czane M. Cruzat |

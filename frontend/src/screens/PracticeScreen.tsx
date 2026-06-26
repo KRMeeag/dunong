@@ -353,7 +353,7 @@ export default function PracticeScreen({
     const info = modeInfo[recitMode] ?? modeInfo["Paraphrase"];
     return (
       <div className="h-full flex flex-col bg-[#FFF9EE]">
-        <div className="px-5 pt-3 flex items-center gap-3 flex-shrink-0">
+        <div className="px-5 pt-3 flex items-center gap-3 shrink-0">
           <button
             onClick={onBack}
             className="w-10 h-10 rounded-2xl bg-[#E7D3A8] flex items-center justify-center"
@@ -370,7 +370,7 @@ export default function PracticeScreen({
           onChange={handleGalleryUpload}
         />
         <div className="mx-5 mt-4 rounded-3xl p-4 border-2 flex items-start gap-3" style={{ borderColor: info.color, background: `${info.color}12` }}>
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${info.color}30` }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${info.color}30` }}>
             <Mic size={18} style={{ color: info.color }} />
           </div>
           <div className="flex-1">
@@ -403,7 +403,7 @@ export default function PracticeScreen({
             }}
             className="w-full bg-[#4B4032] rounded-3xl p-5 flex items-center gap-4 active:scale-95 transition-transform"
           >
-            <div className="w-14 h-14 rounded-2xl bg-[#D6B15E] flex items-center justify-center flex-shrink-0">
+            <div className="w-14 h-14 rounded-2xl bg-[#D6B15E] flex items-center justify-center shrink-0">
               <Camera size={24} className="text-white" />
             </div>
             <div className="text-left flex-1">
@@ -418,7 +418,7 @@ export default function PracticeScreen({
             onClick={() => fileInputRef.current?.click()}
             className="w-full bg-white rounded-3xl p-5 flex items-center gap-4 border border-[#E7D3A8] active:scale-95 transition-transform"
           >
-            <div className="w-14 h-14 rounded-2xl bg-[#E7D3A8] flex items-center justify-center flex-shrink-0">
+            <div className="w-14 h-14 rounded-2xl bg-[#E7D3A8] flex items-center justify-center shrink-0">
               <Upload size={24} className="text-[#4B4032]" />
             </div>
             <div className="text-left flex-1">
@@ -437,7 +437,7 @@ export default function PracticeScreen({
               }}
               className="w-full bg-[#A8CFA0] rounded-3xl p-5 flex items-center gap-4 active:scale-95 transition-transform"
             >
-              <div className="w-14 h-14 rounded-2xl bg-white/30 flex items-center justify-center flex-shrink-0">
+              <div className="w-14 h-14 rounded-2xl bg-white/30 flex items-center justify-center shrink-0">
                 <Mic size={24} className="text-white" />
               </div>
               <div className="text-left flex-1">
@@ -471,9 +471,6 @@ export default function PracticeScreen({
             <p className="text-[#7A736B] text-xs">
               {lang === "FIL" ? "Suriin at i-edit ang na-scan na teksto" : "Review and edit the scanned text"}
             </p>
-          </div>
-          <div className="w-8 h-8 rounded-xl bg-[#F4E3B2] flex items-center justify-center">
-            <PenLine size={14} className="text-[#D6B15E]" />
           </div>
         </div>
         <div className="flex-1 overflow-y-auto px-5 mt-4 pb-4" style={{ scrollbarWidth: "none" }}>
@@ -525,7 +522,7 @@ export default function PracticeScreen({
   if (step === 0)
     return (
       <div className="h-full flex flex-col bg-[#1A1209]">
-        <div className="px-5 pt-3 flex items-center justify-between flex-shrink-0">
+        <div className="px-5 pt-3 flex items-center justify-between shrink-0">
           <button
             onClick={onBack}
             className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center"
@@ -569,7 +566,7 @@ export default function PracticeScreen({
             </span>
           </div>
         </div>
-        <div className="px-6 py-5 flex items-center justify-around flex-shrink-0">
+        <div className="px-6 py-5 flex items-center justify-around shrink-0">
           <input
             ref={fileInputRef}
             type="file"
@@ -610,7 +607,7 @@ export default function PracticeScreen({
   if (step === 1)
     return (
       <div className="h-full flex flex-col bg-[#FFF9EE]">
-        <div className="px-5 pt-3 flex items-center gap-3 flex-shrink-0">
+        <div className="px-5 pt-3 flex items-center gap-3 shrink-0">
           <button
             onClick={() => setStep(0)}
             className="w-10 h-10 rounded-2xl bg-[#E7D3A8] flex items-center justify-center"
@@ -651,7 +648,7 @@ export default function PracticeScreen({
               disabled={asking}
               className="w-full bg-[#F4E3B2] rounded-2xl p-3.5 mb-3 flex items-center gap-3 active:scale-95 transition-transform disabled:opacity-60"
             >
-              <div className="w-9 h-9 rounded-xl bg-[#D6B15E] flex items-center justify-center flex-shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-[#D6B15E] flex items-center justify-center shrink-0">
                 <MessageCircle size={16} className="text-white" />
               </div>
               <div className="text-left">
@@ -704,7 +701,7 @@ export default function PracticeScreen({
     return (
       <div className="h-full flex flex-col bg-[#FFF9EE]">
         {/* Top bar */}
-        <div className="px-5 pt-3 flex items-center gap-3 flex-shrink-0">
+        <div className="px-5 pt-3 flex items-center gap-3 shrink-0">
           <button onClick={() => { window.speechSynthesis.cancel(); setShowSabihinMo(false); }}
             className="w-10 h-10 rounded-2xl bg-[#E7D3A8] flex items-center justify-center">
             <ArrowLeft size={18} className="text-[#4B4032]" />
@@ -765,7 +762,7 @@ export default function PracticeScreen({
     const modes = ["Paraphrase", "Read-Aloud", "Cold Call", "Stand & Deliver"];
     return (
       <div className="h-full flex flex-col bg-[#FFF9EE]">
-        <div className="px-5 pt-3 flex items-center gap-3 flex-shrink-0">
+        <div className="px-5 pt-3 flex items-center gap-3 shrink-0">
           <button
             onClick={() => setStep(1)}
             className="w-10 h-10 rounded-2xl bg-[#E7D3A8] flex items-center justify-center"
@@ -782,7 +779,7 @@ export default function PracticeScreen({
             </div>
           )}
         </div>
-        <div className="px-5 mt-3 flex-shrink-0">
+        <div className="px-5 mt-3 shrink-0">
           <div
             className="flex gap-2 overflow-x-auto pb-1"
             style={{ scrollbarWidth: "none" }}
@@ -791,7 +788,7 @@ export default function PracticeScreen({
               <button
                 key={m}
                 onClick={() => setRecitMode(m)}
-                className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-[11px] font-bold transition-all ${recitMode === m ? "bg-[#4B4032] text-white" : "bg-[#E7D3A8] text-[#7A736B]"}`}
+                className={`shrink-0 px-3.5 py-1.5 rounded-full text-[11px] font-bold transition-all ${recitMode === m ? "bg-[#4B4032] text-white" : "bg-[#E7D3A8] text-[#7A736B]"}`}
               >
                 {m}
               </button>
@@ -800,8 +797,8 @@ export default function PracticeScreen({
         </div>
         {selBlock !== null &&
           (["Cold Call", "Stand & Deliver"].includes(recitMode) ? (
-            <div className="mx-5 mt-3 bg-[#F4E3B2] rounded-3xl p-4 border border-[#D6B15E]/40 shadow-sm flex-shrink-0 flex items-center gap-3">
-              <Lock size={16} className="text-[#D6B15E] flex-shrink-0" />
+            <div className="mx-5 mt-3 bg-[#F4E3B2] rounded-3xl p-4 border border-[#D6B15E]/40 shadow-sm shrink-0 flex items-center gap-3">
+              <Lock size={16} className="text-[#D6B15E] shrink-0" />
               <div>
                 <p className="text-[9px] font-bold text-[#7A736B] uppercase tracking-wider">
                   Text hidden
@@ -812,7 +809,7 @@ export default function PracticeScreen({
               </div>
             </div>
           ) : (
-            <div className="mx-5 mt-3 bg-white rounded-3xl p-4 border border-[#E7D3A8]/60 shadow-sm flex-shrink-0">
+            <div className="mx-5 mt-3 bg-white rounded-3xl p-4 border border-[#E7D3A8]/60 shadow-sm shrink-0">
               <p className="text-[9px] font-bold text-[#7A736B] uppercase tracking-wider mb-1.5">
                 Selected Text
               </p>

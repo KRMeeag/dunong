@@ -10,6 +10,7 @@ export default function HomeScreen({
   points,
   notebookCount,
   history,
+  lang,
 }: {
   onPractice: (mode?: string) => void;
   onProfile: () => void;
@@ -18,6 +19,7 @@ export default function HomeScreen({
   points: number;
   notebookCount: number;
   history: Session[];
+  lang: string;
 }) {
   const initials = userName.slice(0, 2).toUpperCase();
 
@@ -56,7 +58,7 @@ export default function HomeScreen({
       {/* Header */}
       <div className="px-5 pt-3 flex items-center justify-between">
         <div>
-          <p className="text-xs text-[#7A736B] font-medium">Magandang araw,</p>
+          <p className="text-xs text-[#7A736B] font-medium">{lang === "FIL" ? "Magandang araw," : "Good day,"}</p>
           <h2 className="text-xl font-black text-[#4B4032]" style={{ fontFamily: "Fraunces, serif" }}>{userName}</h2>
         </div>
         <div className="flex items-center gap-2.5">

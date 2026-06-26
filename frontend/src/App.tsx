@@ -141,6 +141,7 @@ export default function App() {
                     points={points}
                     notebookCount={notebooks.length}
                     history={history}
+                    lang={lang}
                   />
                 )}
                 {activeTab === "practice" && (

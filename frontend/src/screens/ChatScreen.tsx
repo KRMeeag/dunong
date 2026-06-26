@@ -25,6 +25,14 @@ export default function ChatScreen({
   const bottomRef = useRef<HTMLDivElement>(null);
   const isFil = lang === "FIL";
 
+  const greeting = (l: string) => ({
+    id: "greeting",
+    role: "assistant" as const,
+    text: l === "FIL"
+      ? "Kumusta! Ako si Dunong, ang iyong AI study companion. Maaari kang magtanong tungkol sa anumang paksa — Science, Math, Filipino, History, at iba pa. Nandito ako para tumulong!"
+      : "Hello! I'm Dunong, your AI study companion. You can ask me about any subject — Science, Math, Filipino, History, and more. I'm here to help!",
+  });
+
   useEffect(() => {
     const goOnline = () => setIsOnline(true);
     const goOffline = () => setIsOnline(false);
@@ -38,17 +46,19 @@ export default function ChatScreen({
 
   useEffect(() => {
     if (messages.length === 0) {
-      setMessages([
-        {
-          id: "greeting",
-          role: "assistant",
-          text: isFil
-            ? "Kumusta! Ako si Dunong, ang iyong AI study companion. Maaari kang magtanong tungkol sa anumang paksa — Science, Math, Filipino, History, at iba pa. Nandito ako para tumulong!"
-            : "Hello! I'm Dunong, your AI study companion. You can ask me about any subject — Science, Math, Filipino, History, and more. I'm here to help!",
-        },
-      ]);
+      setMessages([greeting(lang)]);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Sync voice accent and update greeting when language changes
+  useEffect(() => {
+    setVoiceAccent(lang === "FIL" ? "FIL" : "EN");
+    setMessages((prev) =>
+      prev.map((m) => (m.id === "greeting" ? greeting(lang) : m))
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });

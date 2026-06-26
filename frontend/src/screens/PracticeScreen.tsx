@@ -30,7 +30,7 @@ export default function PracticeScreen({
   defaultMode?: string;
   preloadedText?: string;
 }) {
-  const [showChoice, setShowChoice] = useState(!preloadedText);
+  const [showChoice, setShowChoice] = useState(false);
   const [step, setStep] = useState(preloadedText ? 1 : 0);
   const [recitMode, setRecitMode] = useState(defaultMode);
   const [listening, setListening] = useState(false);

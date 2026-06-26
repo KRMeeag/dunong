@@ -29,6 +29,7 @@ import {
   OralScore,
 } from "../types";
 import { API } from "../constants";
+import { ocrImage } from "../utils/ocr";
 
 export default function LibraryScreen({
   notebooks,
@@ -235,15 +236,27 @@ export default function LibraryScreen({
     setAdding(true); setAddError("");
     try {
       const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve((reader.result as string).split(",")[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          const MAX = 1280;
+          let { naturalWidth: w, naturalHeight: h } = img;
+          if (w > MAX || h > MAX) {
+            if (w > h) { h = Math.round((h / w) * MAX); w = MAX; }
+            else { w = Math.round((w / h) * MAX); h = MAX; }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+          URL.revokeObjectURL(url);
+          resolve(canvas.toDataURL("image/jpeg", 0.85).split(",")[1]);
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Could not load image")); };
+        img.src = url;
       });
-      const res = await fetch(`${API}/api/scan`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image: base64 }) });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      await addSource("image", data.text, file.name || "Scanned Image");
+      const text = await ocrImage(base64);
+      if (!text) throw new Error("No text found in image — try better lighting.");
+      await addSource("image", text, file.name || "Scanned Image");
     } catch (err: any) { setAddError(err.message || "Image scan failed"); }
     finally { setAdding(false); if (imgInputRef.current) imgInputRef.current.value = ""; }
   }, [selected, addSource]);

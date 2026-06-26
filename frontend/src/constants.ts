@@ -1,4 +1,4 @@
-export const API = "";
+export const API = import.meta.env.VITE_API_URL ?? "";
 
 export const weeklyPoints = [
   { day: "M", pts: 42 },

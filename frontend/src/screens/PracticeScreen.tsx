@@ -194,12 +194,17 @@ export default function PracticeScreen({
 
   const captureAndScan = useCallback(async () => {
     if (!videoRef.current) return;
+    const vid = videoRef.current;
+    if (!vid.videoWidth || !vid.videoHeight || vid.readyState < 2) {
+      setError("Camera not ready yet — wait a moment and try again.");
+      return;
+    }
     setScanning(true);
     setError("");
     const canvas = document.createElement("canvas");
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
-    canvas.getContext("2d")!.drawImage(videoRef.current, 0, 0);
+    canvas.width = vid.videoWidth;
+    canvas.height = vid.videoHeight;
+    canvas.getContext("2d")!.drawImage(vid, 0, 0);
     const base64 = canvas.toDataURL("image/jpeg").split(",")[1];
     try {
       const res = await fetch(`${API}/api/scan`, {

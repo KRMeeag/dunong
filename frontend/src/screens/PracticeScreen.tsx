@@ -13,9 +13,9 @@ import {
   Volume2,
   Zap,
   Check,
-  PenLine,
 } from "lucide-react";
 import SkillRing from "../components/SkillRing";
+import { ocrImage } from "../utils/ocr";
 import { Scores } from "../types";
 import { API } from "../constants";
 
@@ -185,18 +185,8 @@ export default function PracticeScreen({
           img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Could not load image")); };
           img.src = url;
         });
-        const res = await fetch(`${API}/api/scan`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image: base64 }),
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        const text: string = data.text;
-        const paras = text
-          .split(/\n\n+/)
-          .map((p: string) => p.trim())
-          .filter((p: string) => p.length > 20);
+        const text = await ocrImage(base64);
+        if (!text) throw new Error("No text found in image — try better lighting or a closer shot.");
         stopCamera();
         setTamaBaText(text);
         setShowTamaBa(true);
@@ -232,18 +222,8 @@ export default function PracticeScreen({
     canvas.getContext("2d")!.drawImage(vid, 0, 0, cw, ch);
     const base64 = canvas.toDataURL("image/jpeg", 0.85).split(",")[1];
     try {
-      const res = await fetch(`${API}/api/scan`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: base64 }),
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      const text: string = data.text;
-      const paras = text
-        .split(/\n\n+/)
-        .map((p: string) => p.trim())
-        .filter((p: string) => p.length > 20);
+      const text = await ocrImage(base64);
+      if (!text) throw new Error("No text found — try better lighting or move closer.");
       stopCamera();
       setTamaBaText(text);
       setShowTamaBa(true);
@@ -422,7 +402,7 @@ export default function PracticeScreen({
           {scanning && (
             <div className="bg-[#F4E3B2] rounded-2xl px-4 py-3 flex items-center gap-3">
               <div className="w-4 h-4 border-2 border-[#D6B15E] border-t-transparent rounded-full animate-spin shrink-0" />
-              <p className="text-[#4B4032] text-xs font-semibold">Scanning photo...</p>
+              <p className="text-[#4B4032] text-xs font-semibold">Reading text on device…</p>
             </div>
           )}
           {error && !scanning && (
@@ -598,7 +578,7 @@ export default function PracticeScreen({
           )}
           <div className="absolute bottom-6 inset-x-0 flex justify-center">
             <span className="bg-[#D6B15E]/90 text-white text-xs font-bold px-4 py-1.5 rounded-full">
-              {scanning ? "Scanning..." : "Point at printed text"}
+              {scanning ? "Reading text…" : "Point at printed text"}
             </span>
           </div>
         </div>

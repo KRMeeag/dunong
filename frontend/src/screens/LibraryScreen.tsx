@@ -37,11 +37,13 @@ export default function LibraryScreen({
   setNotebooks,
   lang,
   onPractice,
+  onEarnPoints,
 }: {
   notebooks: Notebook[];
   setNotebooks: React.Dispatch<React.SetStateAction<Notebook[]>>;
   lang: string;
   onPractice: (mode: string, text: string) => void;
+  onEarnPoints?: (pts: number) => void;
 }) {
   const fil = lang === "FIL";
   const [selected, setSelected] = useState<Notebook | null>(null);
@@ -77,14 +79,13 @@ export default function LibraryScreen({
   const [oralScores, setOralScores] = useState<OralScore[]>([]);
   const [oralGenerating, setOralGenerating] = useState(false);
   const [oralTimer, setOralTimer] = useState(0);
+  const [oralTimeLimit, setOralTimeLimit] = useState(0); // seconds; 0 = no limit
   const oralMrRef = useRef<MediaRecorder | null>(null);
   const oralChunksRef = useRef<Blob[]>([]);
   const oralTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const oralVadCleanupRef = useRef<(() => void) | null>(null);
 
   const getContent = (nb: Notebook) => nb.sources.map((s) => s.content).join("\n\n");
-
-  const oralTimerLimit = (m: OralMode) => ({ "read-aloud": 0, "paraphrase": 0, "quiz-bee": 30, "recitation": 60 }[m]);
   const oralScoreInfo = (s: number) => {
     if (s >= 9) return { color: "#D6B15E", bg: "#D6B15E20", badge: "Expert 🏆" };
     if (s >= 7) return { color: "#A8CFA0", bg: "#A8CFA020", badge: "Proficient ⭐" };
@@ -200,6 +201,7 @@ export default function LibraryScreen({
         };
         setOralCurrentScore(result);
         setOralScores(prev => [...prev, result]);
+        onEarnPoints?.(result.score * 10);
         setOralPhase("card-result");
       } catch { /* silent */ }
       finally { setOralAnalyzing(false); }
@@ -209,8 +211,8 @@ export default function LibraryScreen({
     oralMrRef.current = mr;
     setOralRecording(true);
 
-    // For timed modes (quiz-bee / recitation) — countdown timer still applies
-    const limit = oralTimerLimit(oralMode);
+    // Countdown timer if user set a time limit
+    const limit = oralTimeLimit;
     if (limit > 0) {
       setOralTimer(limit);
       oralTimerRef.current = setInterval(() => {
@@ -804,8 +806,8 @@ export default function LibraryScreen({
               {([
                 { id: "read-aloud" as OralMode, label: "Read Aloud", sub: fil ? "Basahin ang mga talata nang malakas" : "Read paragraphs aloud & get scored", color: "#A8CFA0", timer: "" },
                 { id: "paraphrase" as OralMode, label: "Paraphrase", sub: fil ? "Ipaliwanag ang mga termino sa sariling salita" : "Explain key terms in your own words", color: "#D6B15E", timer: "" },
-                { id: "quiz-bee" as OralMode, label: "Quiz Bee", sub: fil ? "Pangalanan ang termino mula sa kahulugan" : "Name the term from its definition", color: "#4B4032", timer: "30s" },
-                { id: "recitation" as OralMode, label: "Recitation", sub: fil ? "Ipaliwanag ang konsepto nang detalyado" : "Explain concepts in detail", color: "#BF9840", timer: "60s" },
+                { id: "quiz-bee" as OralMode, label: "Quiz Bee", sub: fil ? "Pangalanan ang termino mula sa kahulugan" : "Name the term from its definition", color: "#4B4032", timer: "" },
+                { id: "recitation" as OralMode, label: "Recitation", sub: fil ? "Ipaliwanag ang konsepto nang detalyado" : "Explain concepts in detail", color: "#BF9840", timer: "" },
               ]).map((m) => (
                 <button key={m.id} onClick={() => { setOralMode(m.id); setOralCount(5); setOralSelection("auto"); setOralPhase("setup"); }}
                   className="w-full flex items-center gap-3.5 bg-white rounded-2xl px-4 py-3.5 border border-[#E7D3A8]/60 shadow-sm active:scale-[0.98] transition-transform text-left">
@@ -863,6 +865,33 @@ export default function LibraryScreen({
                   {oralSelection === "auto"
                     ? (fil ? "Awtomatikong pipiliin ang mga items para sa iyo." : "Items will be selected automatically for you.")
                     : (fil ? "Ikaw ang pipili kung aling mga items ang isasama." : "You choose which specific items to include.")}
+                </p>
+              </div>
+
+              {/* Time limit */}
+              <div className="bg-white rounded-2xl p-4 border border-[#E7D3A8]/60 shadow-sm mb-5">
+                <p className="text-[#4B4032] font-bold text-xs mb-3 flex items-center gap-1.5">
+                  <Clock size={12} className="text-[#D6B15E]" />
+                  {fil ? "Limitasyon sa Oras (bawat card)" : "Time Limit (per card)"}
+                </p>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    min={0}
+                    value={oralTimeLimit === 0 ? "" : oralTimeLimit}
+                    onChange={(e) => {
+                      const v = parseInt(e.target.value, 10);
+                      setOralTimeLimit(isNaN(v) || v < 0 ? 0 : v);
+                    }}
+                    placeholder={fil ? "Walang limitasyon" : "No limit"}
+                    className="flex-1 bg-[#F4E3B2] rounded-xl px-4 py-2.5 text-sm font-bold text-[#4B4032] outline-none placeholder:text-[#C5B9AE] placeholder:font-normal"
+                  />
+                  <span className="text-[#7A736B] text-xs font-semibold shrink-0">
+                    {fil ? "segundo" : "sec"}
+                  </span>
+                </div>
+                <p className="text-[#C5B9AE] text-[10px] mt-1.5">
+                  {fil ? "Iwanang blangko para walang limitasyon" : "Leave blank for no time limit"}
                 </p>
               </div>
 
@@ -941,8 +970,8 @@ export default function LibraryScreen({
                 </div>
               </div>
 
-              {/* Timer (quiz-bee / recitation) */}
-              {oralTimerLimit(oralMode) > 0 && oralRecording && (
+              {/* Timer */}
+              {oralTimeLimit > 0 && oralRecording && (
                 <div className="px-5 flex-shrink-0 mb-1">
                   <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl self-start ${oralTimer <= 10 ? "bg-red-100" : "bg-[#F4E3B2]"}`}>
                     <Clock size={12} className={oralTimer <= 10 ? "text-red-500" : "text-[#D6B15E]"} />
@@ -1000,10 +1029,10 @@ export default function LibraryScreen({
                         <Mic size={28} className="text-white" />
                       </button>
                       <p className="text-[#7A736B] text-[11px]">{fil ? "Pindutin para magsimula" : "Tap to start speaking"}</p>
-                      {oralTimerLimit(oralMode) > 0 && (
+                      {oralTimeLimit > 0 && (
                         <p className="text-[#C5B9AE] text-[10px]">
                           <Clock size={9} className="inline mr-1" />
-                          {fil ? `May ${oralTimerLimit(oralMode)}s na limitasyon` : `${oralTimerLimit(oralMode)}s time limit`}
+                          {fil ? `May ${oralTimeLimit}s na limitasyon` : `${oralTimeLimit}s time limit`}
                         </p>
                       )}
                     </div>

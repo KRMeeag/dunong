@@ -21,13 +21,6 @@ import { watchSilence } from "../utils/vad";
 import { Scores } from "../types";
 import { API } from "../constants";
 
-const TIME_OPTIONS = [
-  { label: "No limit", value: 0 },
-  { label: "30s", value: 30 },
-  { label: "1 min", value: 60 },
-  { label: "2 min", value: 120 },
-  { label: "3 min", value: 180 },
-];
 
 export default function PracticeScreen({
   onDone,
@@ -526,20 +519,31 @@ export default function PracticeScreen({
             </button>
           </div>
 
-          {/* Time limit selector */}
+          {/* Time limit input */}
           <div className="bg-white rounded-2xl p-4 border border-[#E7D3A8]/60 shadow-sm mb-5">
             <p className="text-[9px] font-bold text-[#7A736B] uppercase tracking-wider mb-3 flex items-center gap-1.5">
               <Timer size={10} className="text-[#D6B15E]" />
               {isFil ? "Limitasyon sa Oras" : "Time Limit"}
             </p>
-            <div className="flex gap-2 flex-wrap">
-              {TIME_OPTIONS.map((opt) => (
-                <button key={opt.value} onClick={() => setTimeLimit(opt.value)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${timeLimit === opt.value ? "bg-[#4B4032] text-white shadow-sm" : "bg-[#F4E3B2] text-[#7A736B]"}`}>
-                  {opt.label}
-                </button>
-              ))}
+            <div className="flex items-center gap-3">
+              <input
+                type="number"
+                min={0}
+                value={timeLimit === 0 ? "" : timeLimit}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value, 10);
+                  setTimeLimit(isNaN(v) || v < 0 ? 0 : v);
+                }}
+                placeholder={isFil ? "Walang limitasyon" : "No limit"}
+                className="flex-1 bg-[#F4E3B2] rounded-xl px-4 py-2.5 text-sm font-bold text-[#4B4032] outline-none placeholder:text-[#C5B9AE] placeholder:font-normal"
+              />
+              <span className="text-[#7A736B] text-xs font-semibold shrink-0">
+                {isFil ? "segundo" : "seconds"}
+              </span>
             </div>
+            <p className="text-[#C5B9AE] text-[10px] mt-2">
+              {isFil ? "Iwanang blangko para walang limitasyon" : "Leave blank for no time limit"}
+            </p>
           </div>
         </div>
 

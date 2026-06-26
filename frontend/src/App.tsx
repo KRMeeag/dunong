@@ -205,6 +205,7 @@ export default function App() {
                       setPracticeKey((k) => k + 1);
                       setActiveTab("practice");
                     }}
+                    onEarnPoints={(pts) => setPoints((p) => p + pts)}
                   />
                 )}
                 {activeTab === "profile" && (

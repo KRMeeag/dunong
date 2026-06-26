@@ -120,9 +120,9 @@ Browser / Phone
 
 **Team Name:** Fine Tuned
 
-| Name |
-|---|
-| Shintaro Suzuki |
-| Melfred Bernabe |
-| Kenth Razen Magbanua |
-| Shana Czane M. Cruzat |
+| Name | Role |
+|---|---|
+| Shintaro Suzuki | Demo Video |
+| Melfred Bernabe | Full Stack |
+| Kenth Razen Magbanua | Full Stack |
+| Shana Czane M. Cruzat | Representative |

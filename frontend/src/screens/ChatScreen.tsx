@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
-import { Globe, Mic, Play, Square, Plus, MessageSquare, Trash2 } from "lucide-react";
+import { Globe, Mic, Play, Square, Plus, MessageSquare, Trash2, VolumeX } from "lucide-react";
 import { ChatMessage, ChatSession } from "../types";
 import { offlineChat } from "../types";
 import { API } from "../constants";
@@ -32,6 +32,7 @@ export default function ChatScreen({
   const [listening, setListening] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [voiceAccent, setVoiceAccent] = useState<"FIL" | "EN">(lang === "FIL" ? "FIL" : "EN");
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const mediaRecRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
   const vadCleanupRef = useRef<(() => void) | null>(null);
@@ -90,12 +91,20 @@ export default function ChatScreen({
     if (active) active.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
   }, [activeChatId]);
 
+  const stopSpeaking = useCallback(() => {
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+  }, []);
+
   const speak = useCallback((text: string) => {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const utt = new SpeechSynthesisUtterance(text);
     utt.lang = voiceAccent === "FIL" ? "fil-PH" : "en-US";
     utt.rate = 0.95;
+    utt.onstart = () => setIsSpeaking(true);
+    utt.onend = () => setIsSpeaking(false);
+    utt.onerror = () => setIsSpeaking(false);
     window.speechSynthesis.speak(utt);
   }, [voiceAccent]);
 
@@ -325,6 +334,26 @@ export default function ChatScreen({
 
       {/* Input */}
       <div className="px-4 pb-3 pt-2 border-t border-[#E7D3A8]/60 flex-shrink-0 bg-[#FFF9EE]">
+        {isSpeaking && (
+          <div className="flex items-center justify-between mb-2 bg-[#F4E3B2] rounded-full px-4 py-1.5">
+            <div className="flex items-center gap-2">
+              {[4, 7, 12, 9, 6].map((h, i) => (
+                <div key={i} className="w-0.5 bg-[#D6B15E] rounded-full animate-pulse"
+                  style={{ height: `${h}px`, animationDelay: `${i * 0.12}s` }} />
+              ))}
+              <span className="text-[10px] text-[#7A736B] font-semibold">
+                {isFil ? "Nagsasalita si Dunong…" : "Dunong is speaking…"}
+              </span>
+            </div>
+            <button
+              onClick={stopSpeaking}
+              onTouchEnd={(e) => { e.preventDefault(); stopSpeaking(); }}
+              className="flex items-center gap-1 text-[10px] font-bold text-red-500 active:scale-95 transition-transform">
+              <VolumeX size={12} />
+              {isFil ? "Ihinto" : "Stop"}
+            </button>
+          </div>
+        )}
         {listening && (
           <div className="flex items-center justify-center gap-1 mb-2">
             {[4, 8, 14, 10, 18, 12, 6].map((h, i) => (

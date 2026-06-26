@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, Component, ReactNode } from "react";
 import { checkHealth } from "./services/api";
 import { Session, ChatMessage, Notebook, Scores } from "./types";
 import StatusBar from "./components/StatusBar";
@@ -11,6 +11,23 @@ import ChatScreen from "./screens/ChatScreen";
 import RecitationScreen from "./screens/RecitationScreen";
 import LibraryScreen from "./screens/LibraryScreen";
 import ProfileScreen from "./screens/ProfileScreen";
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
+  state = { error: null };
+  static getDerivedStateFromError(e: Error) { return { error: e.message }; }
+  componentDidCatch(e: Error) { console.error("[ErrorBoundary]", e); }
+  render() {
+    if (this.state.error)
+      return (
+        <div style={{ padding: 24, color: "#4B4032", background: "#FFF9EE", height: "100%", display: "flex", flexDirection: "column", gap: 12 }}>
+          <strong style={{ fontSize: 14 }}>Something crashed — check the browser Console (F12) for the full error.</strong>
+          <code style={{ fontSize: 11, background: "#F4E3B2", padding: 10, borderRadius: 10, whiteSpace: "pre-wrap", wordBreak: "break-all" }}>{this.state.error}</code>
+          <button onClick={() => this.setState({ error: null })} style={{ padding: "8px 16px", borderRadius: 999, background: "#4B4032", color: "#FFF9EE", border: "none", fontSize: 12, cursor: "pointer" }}>Try again</button>
+        </div>
+      );
+    return this.props.children;
+  }
+}
 
 export default function App() {
   const [showLanding, setShowLanding] = useState(true);
@@ -127,14 +144,16 @@ export default function App() {
                   />
                 )}
                 {activeTab === "practice" && (
-                  <PracticeScreen
-                    key={practiceKey}
-                    onDone={handleDone}
-                    lang={lang}
-                    onBack={() => setActiveTab(practiceReturnTab)}
-                    defaultMode={practiceDefaultMode}
-                    preloadedText={practicePreloadedText}
-                  />
+                  <ErrorBoundary key={practiceKey}>
+                    <PracticeScreen
+                      key={practiceKey}
+                      onDone={handleDone}
+                      lang={lang}
+                      onBack={() => setActiveTab(practiceReturnTab)}
+                      defaultMode={practiceDefaultMode}
+                      preloadedText={practicePreloadedText}
+                    />
+                  </ErrorBoundary>
                 )}
                 {activeTab === "chat" && (
                   <ChatScreen

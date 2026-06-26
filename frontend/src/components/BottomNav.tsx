@@ -50,7 +50,7 @@ export default function BottomNav({
         <div className="flex">{rightTabs.map(renderTab)}</div>
       </div>
       <button
-        onClick={onScanPress}
+        onClick={() => onScanPress()}
         className="absolute left-1/2 -translate-x-1/2 w-14 h-14 rounded-full bg-[#D6B15E] border-4 border-[#FFF9EE] flex items-center justify-center shadow-xl shadow-[#D6B15E]/40 active:scale-95 transition-transform z-10"
         style={{ top: 0 }}
       >

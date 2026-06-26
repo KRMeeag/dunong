@@ -124,5 +124,5 @@ Browser / Phone
 |---|---|
 | Shintaro Suzuki | Demo Video |
 | Melfred Bernabe | Full Stack |
-| Kenth Razen Magbanua | Full Stack |
+| Kenth Razen Magbanua | Dev Ops |
 | Shana Czane M. Cruzat | Representative |

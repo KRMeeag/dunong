@@ -30,6 +30,7 @@ import {
 } from "../types";
 import { API } from "../constants";
 import { ocrImage } from "../utils/ocr";
+import { watchSilence } from "../utils/vad";
 
 export default function LibraryScreen({
   notebooks,
@@ -79,6 +80,7 @@ export default function LibraryScreen({
   const oralMrRef = useRef<MediaRecorder | null>(null);
   const oralChunksRef = useRef<Blob[]>([]);
   const oralTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const oralVadCleanupRef = useRef<(() => void) | null>(null);
 
   const getContent = (nb: Notebook) => nb.sources.map((s) => s.content).join("\n\n");
 
@@ -110,11 +112,14 @@ export default function LibraryScreen({
     return Array.from({ length: n }, (_, i) => arr[Math.floor(i * step)]);
   };
   const resetOral = () => {
+    oralVadCleanupRef.current?.();
+    oralVadCleanupRef.current = null;
+    if (oralTimerRef.current) { clearInterval(oralTimerRef.current); oralTimerRef.current = null; }
+    if (oralMrRef.current) { try { oralMrRef.current.stop(); } catch { /* already stopped */ } oralMrRef.current = null; }
     setOralPhase("select");
     setOralCards([]); setOralScores([]); setOralCurrentScore(null);
     setOralCardIndex(0); setOralPool([]); setOralPickedIds(new Set());
     setOralRecording(false); setOralAnalyzing(false);
-    if (oralTimerRef.current) { clearInterval(oralTimerRef.current); oralTimerRef.current = null; }
   };
 
   const handleOralGenerate = useCallback(async () => {
@@ -153,50 +158,90 @@ export default function LibraryScreen({
   }, [selected, oralMode, oralCount, oralSelection, lang]);
 
   const startOralRecording = useCallback(async () => {
+    let stream: MediaStream;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mr = new MediaRecorder(stream);
-      oralChunksRef.current = [];
-      mr.ondataavailable = e => { if (e.data.size > 0) oralChunksRef.current.push(e.data); };
-      mr.onstop = async () => {
-        stream.getTracks().forEach(t => t.stop());
-        setOralRecording(false); setOralAnalyzing(true);
-        try {
-          const blob = new Blob(oralChunksRef.current, { type: "audio/webm" });
-          const fd = new FormData(); fd.append("audio", blob, "oral.webm");
-          const tRes = await fetch(`${API}/api/transcribe`, { method: "POST", body: fd });
-          const { transcript = "" } = await tRes.json();
-          const card = oralCards[oralCardIndex];
-          const sRes = await fetch(`${API}/api/oral-score`, {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ mode: oralMode, cardContent: card.content, transcript, lang }),
-          });
-          const sData = await sRes.json();
-          const result: OralScore = { score: sData.score ?? 5, label: sData.label ?? "Developing", feedback: sData.feedback ?? "", transcript };
-          setOralCurrentScore(result);
-          setOralScores(prev => [...prev, result]);
-          setOralPhase("card-result");
-        } catch { /* silent */ }
-        finally { setOralAnalyzing(false); }
-      };
-      mr.start(); oralMrRef.current = mr; setOralRecording(true);
-      const limit = oralTimerLimit(oralMode);
-      if (limit > 0) {
-        setOralTimer(limit);
-        oralTimerRef.current = setInterval(() => {
-          setOralTimer(prev => {
-            if (prev <= 1) { clearInterval(oralTimerRef.current!); oralTimerRef.current = null; oralMrRef.current?.stop(); return 0; }
-            return prev - 1;
-          });
-        }, 1000);
-      }
-    } catch { /* mic denied */ }
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch { return; /* mic denied */ }
+
+    const mime = MediaRecorder.isTypeSupported("audio/webm")
+      ? "audio/webm"
+      : MediaRecorder.isTypeSupported("audio/mp4")
+        ? "audio/mp4"
+        : "";
+    const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+    oralChunksRef.current = [];
+    mr.ondataavailable = e => { if (e.data.size > 0) oralChunksRef.current.push(e.data); };
+    mr.onstop = async () => {
+      oralVadCleanupRef.current?.();
+      oralVadCleanupRef.current = null;
+      stream.getTracks().forEach(t => t.stop());
+      setOralRecording(false);
+      setOralAnalyzing(true);
+      try {
+        const blobMime = mime || "audio/webm";
+        const blob = new Blob(oralChunksRef.current, { type: blobMime });
+        const filename = blobMime.includes("mp4") ? "oral.mp4" : "oral.webm";
+        const fd = new FormData();
+        fd.append("audio", blob, filename);
+        const tRes = await fetch(`${API}/api/transcribe`, { method: "POST", body: fd });
+        const { transcript = "" } = await tRes.json();
+        const card = oralCards[oralCardIndex];
+        const sRes = await fetch(`${API}/api/oral-score`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode: oralMode, cardContent: card.content, transcript, lang }),
+        });
+        const sData = await sRes.json();
+        const result: OralScore = {
+          score: sData.score ?? 5,
+          label: sData.label ?? "Developing",
+          feedback: sData.feedback ?? "",
+          transcript,
+        };
+        setOralCurrentScore(result);
+        setOralScores(prev => [...prev, result]);
+        setOralPhase("card-result");
+      } catch { /* silent */ }
+      finally { setOralAnalyzing(false); }
+    };
+
+    mr.start();
+    oralMrRef.current = mr;
+    setOralRecording(true);
+
+    // For timed modes (quiz-bee / recitation) — countdown timer still applies
+    const limit = oralTimerLimit(oralMode);
+    if (limit > 0) {
+      setOralTimer(limit);
+      oralTimerRef.current = setInterval(() => {
+        setOralTimer(prev => {
+          if (prev <= 1) {
+            clearInterval(oralTimerRef.current!);
+            oralTimerRef.current = null;
+            oralMrRef.current?.stop();
+            oralMrRef.current = null;
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    // VAD: auto-stop after ~1.8s of silence (all modes)
+    oralVadCleanupRef.current = watchSilence(stream, () => {
+      if (!oralMrRef.current) return;
+      if (oralTimerRef.current) { clearInterval(oralTimerRef.current); oralTimerRef.current = null; }
+      oralMrRef.current.stop();
+      oralMrRef.current = null;
+    }, { silenceMs: 1800, minSpeakMs: 400 });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [oralMode, oralCards, oralCardIndex, lang]);
 
   const stopOralRecording = useCallback(() => {
+    oralVadCleanupRef.current?.();
+    oralVadCleanupRef.current = null;
     if (oralTimerRef.current) { clearInterval(oralTimerRef.current); oralTimerRef.current = null; }
-    oralMrRef.current?.stop();
+    if (oralMrRef.current) { oralMrRef.current.stop(); oralMrRef.current = null; }
   }, []);
 
   const updateNotebook = useCallback((updated: Notebook) => {
@@ -933,12 +978,21 @@ export default function LibraryScreen({
                     <div className="flex flex-col items-center gap-3">
                       <div className="flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 rounded-full">
                         <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                        <span className="text-red-600 text-xs font-bold">{fil ? "Nagre-record..." : "Recording..."}</span>
+                        <span className="text-red-600 text-xs font-bold">{fil ? "Nagre-record…" : "Recording…"}</span>
                       </div>
-                      <button onClick={stopOralRecording} className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center shadow-lg shadow-red-500/30 active:scale-95 transition-transform">
+                      {/* Waveform */}
+                      <div className="flex items-end gap-0.5 h-10">
+                        {[5,9,16,12,20,14,8,18,11,15,7,13,10].map((h, i) => (
+                          <div key={i} className="w-1 rounded-full bg-red-400"
+                            style={{ height: `${h}px`, animation: `pulse ${0.4 + (i % 4) * 0.15}s ease-in-out infinite alternate`, animationDelay: `${i * 0.07}s` }} />
+                        ))}
+                      </div>
+                      <button onClick={stopOralRecording}
+                        onTouchEnd={(e) => { e.preventDefault(); stopOralRecording(); }}
+                        className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center shadow-lg shadow-red-500/30 active:scale-95 transition-transform">
                         <StopCircle size={28} className="text-white" />
                       </button>
-                      <p className="text-[#7A736B] text-[11px]">{fil ? "Pindutin para ihinto" : "Tap to stop recording"}</p>
+                      <p className="text-[#7A736B] text-[11px]">{fil ? "Hihinto sa katahimikan o pindutin para ihinto" : "Auto-stops on silence · tap to stop early"}</p>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center gap-3">

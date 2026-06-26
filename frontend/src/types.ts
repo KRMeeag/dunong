@@ -9,6 +9,13 @@ export type OralMode = "read-aloud" | "paraphrase" | "quiz-bee" | "recitation";
 export type OralPhase = "select" | "setup" | "pick" | "practice" | "card-result" | "results";
 export type OralCard = { id: string; content: string; hint?: string };
 export type OralScore = { score: number; label: string; feedback: string; transcript: string };
+export type ChatSession = {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  createdAt: string;
+};
+
 export type Notebook = {
   id: string;
   title: string;

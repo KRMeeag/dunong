@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, Component, ReactNode } from "react";
 import { checkHealth } from "./services/api";
-import { Session, ChatMessage, Notebook, Scores } from "./types";
+import { Session, ChatMessage, ChatSession, Notebook, Scores, Source } from "./types";
 import StatusBar from "./components/StatusBar";
 import BottomNav from "./components/BottomNav";
 import LandingScreen from "./screens/LandingScreen";
@@ -42,7 +42,8 @@ export default function App() {
   const [practiceDefaultMode, setPracticeDefaultMode] = useState("Paraphrase");
   const [practicePreloadedText, setPracticePreloadedText] = useState<string | undefined>(undefined);
   const [practiceReturnTab, setPracticeReturnTab] = useState<string>("home");
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [notebooks, setNotebooks] = useState<Notebook[]>([]);
 
   useEffect(() => {
@@ -62,6 +63,25 @@ export default function App() {
       ...h,
       { scores, feedback, date: new Date().toISOString().slice(0, 10) },
     ]);
+  }, []);
+
+  const handleScanComplete = useCallback((text: string) => {
+    const src: Source = {
+      id: Date.now().toString() + "_s",
+      type: "image",
+      label: "Scanned Text",
+      content: text,
+    };
+    const nb: Notebook = {
+      id: Date.now().toString(),
+      title: `Scan – ${new Date().toLocaleDateString()}`,
+      sources: [src],
+      chatMessages: [],
+      flashcards: [],
+      quiz: [],
+      createdAt: new Date().toLocaleDateString(),
+    };
+    setNotebooks((prev) => [nb, ...prev]);
   }, []);
 
   const handleScanPress = useCallback(
@@ -152,6 +172,7 @@ export default function App() {
                       lang={lang}
                       onBack={() => setActiveTab(practiceReturnTab)}
                       defaultMode={practiceDefaultMode}
+                      onScanComplete={handleScanComplete}
                       preloadedText={practicePreloadedText}
                     />
                   </ErrorBoundary>
@@ -159,8 +180,10 @@ export default function App() {
                 {activeTab === "chat" && (
                   <ChatScreen
                     lang={lang}
-                    messages={chatMessages}
-                    setMessages={setChatMessages}
+                    sessions={chatSessions}
+                    setSessions={setChatSessions}
+                    activeChatId={activeChatId}
+                    setActiveChatId={setActiveChatId}
                   />
                 )}
                 {activeTab === "recitation" && (
